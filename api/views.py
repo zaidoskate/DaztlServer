@@ -121,3 +121,35 @@ class LiveChatCreateView(generics.CreateAPIView):
     serializer_class = LiveChatSerializer
     def perform_create(self, ser):
         ser.save(user=self.request.user)
+
+from django.http import Http404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .models import Like, ArtistProfile
+
+# --- CU-13: Like/Unlike artista ---
+@api_view(['POST'])
+def like_artist(request, artist_id):
+    try:
+        artist = ArtistProfile.objects.get(id=artist_id)
+    except ArtistProfile.DoesNotExist:
+        return Response({"error": "Artista no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+    
+    Like.objects.get_or_create(user=request.user, artist=artist)
+    return Response({"status": "Like agregado"}, status=status.HTTP_201_CREATED)
+
+@api_view(['DELETE'])
+def unlike_artist(request, artist_id):
+    try:
+        like = Like.objects.get(user=request.user, artist_id=artist_id)
+    except Like.DoesNotExist:
+        return Response({"error": "Like no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+    
+    like.delete()
+    return Response({"status": "Like eliminado"}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def is_liked(request, artist_id):
+    is_liked = Like.objects.filter(user=request.user, artist_id=artist_id).exists()
+    return Response({"liked": is_liked}, status=status.HTTP_200_OK)
