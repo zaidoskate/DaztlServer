@@ -16,20 +16,17 @@ from .serializers import (
 
 NotificationSerializer = None
 
-# — CU-01 Registro
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
-# — CU-02 Modificar perfil
 class ProfileUpdateView(generics.UpdateAPIView):
     serializer_class = ProfileUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
     def get_object(self):
         return self.request.user
 
-# — CU-03 Buscar canciones/artistas/álbumes
 class SongListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = SongSerializer
@@ -51,13 +48,11 @@ class ArtistListView(generics.ListAPIView):
         q = self.request.query_params.get('q','')
         return ArtistProfile.objects.filter(user__username__icontains=q)
 
-# — CU-04 “Reproducir música” (entrega URL; la reproducción la hace el cliente)
 class SongDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
     queryset = Song.objects.all()
     serializer_class = SongSerializer
 
-# — CU-05/06/07 Playlists CRUD
 class PlaylistCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PlaylistSerializer
@@ -69,7 +64,6 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
 
-# — CU-08 Subir canción
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SongUploadSerializer
@@ -77,14 +71,12 @@ class SongUploadView(generics.CreateAPIView):
         artist_profile = self.request.user.artistprofile
         ser.save(artist=artist_profile)
 
-# — CU-09 Subir álbum
 class AlbumUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AlbumUploadSerializer
     def get_serializer_context(self):
         return {'request': self.request}
 
-# — CU-10 Reporte artista
 class ArtistReportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, req):
@@ -96,7 +88,6 @@ class ArtistReportView(APIView):
         }
         return Response(ArtistReportSerializer(data).data)
 
-# — CU-11 Reporte sistema (admin)
 class SystemReportView(APIView):
     permission_classes = [permissions.IsAdminUser]
     def get(self, _):
@@ -108,7 +99,6 @@ class SystemReportView(APIView):
         }
         return Response(SystemReportSerializer(data).data)
 
-# — CU-12 Chat en vivo (list + post; solo primera duración asume cliente)
 class LiveChatListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = LiveChatSerializer
