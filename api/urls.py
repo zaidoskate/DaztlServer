@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-
+    
 urlpatterns = [
     # CU-01 / CU-02
     path('register/', views.RegisterView.as_view()),
