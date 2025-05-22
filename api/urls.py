@@ -30,6 +30,5 @@ urlpatterns = [
 
     #CU-13 Like/unlike artista
     path('artists/<int:artist_id>/like/', views.like_artist, name='like-artist'), #POST
-    path('artists/<int:artist_id>/like/', views.unlike_artist, name='unlike-artist'), #DELETE
     path('artists/<int:artist_id>/like/status/', views.is_liked, name='is-liked'), #GET
 ]
