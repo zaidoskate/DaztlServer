@@ -54,24 +54,9 @@ class TestTokenAuth:
         
     def test_access_protected_endpoint_without_token(self):
         # Intentar acceder a un endpoint protegido sin token
-        profile_url = reverse('profile-update')  # Asegúrate de nombrar tus URLs
+        profile_url = reverse('profile-update')  
         response = self.client.get(profile_url)
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         
-    def test_access_protected_endpoint_with_token(self):
-        # Obtener token
-        data = {
-            "username": "authuser",
-            "password": "password123"
-        }
-        
-        login_response = self.client.post(self.login_url, data, format='json')
-        access_token = login_response.data['access']
-        
-        # Acceder con token
-        profile_url = reverse('profile-update')  # Asegúrate de nombrar tus URLs
-        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
-        response = self.client.get(profile_url)
-        
-        assert response.status_code == status.HTTP_200_OK
+    

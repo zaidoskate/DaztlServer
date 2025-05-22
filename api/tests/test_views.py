@@ -9,7 +9,7 @@ from api.models import User, ArtistProfile, Song, Album, Playlist
 class TestAuthViews:
     def setup_method(self):
         self.client = APIClient()
-        self.register_url = reverse('register')  # Asegúrate de nombrar tus URLs en api/urls.py
+        self.register_url = reverse('register')  
         
     def test_register_view(self):
         data = {
@@ -40,7 +40,7 @@ class TestAuthViews:
         self.client.force_authenticate(user=user)
         
         # Actualizar perfil
-        profile_url = reverse('profile-update')  # Asegúrate de nombrar tus URLs
+        profile_url = reverse('profile-update')  
         data = {
             "email": "new@example.com",
             "first_name": "New",
@@ -89,7 +89,7 @@ class TestSongViews:
         )
         
     def test_song_list_view(self):
-        url = reverse('song-list')  # Asegúrate de nombrar tus URLs
+        url = reverse('song-list')  
         response = self.client.get(f"{url}?q=Test", format='json')
         
         assert response.status_code == status.HTTP_200_OK
@@ -97,7 +97,7 @@ class TestSongViews:
         assert response.data[0]['title'] == "Test Song"
         
     def test_song_detail_view(self):
-        url = reverse('song-detail', kwargs={'pk': self.song.pk})  # Asegúrate de nombrar tus URLs
+        url = reverse('song-detail', kwargs={'pk': self.song.pk})  
         response = self.client.get(url, format='json')
         
         assert response.status_code == status.HTTP_200_OK
@@ -109,7 +109,7 @@ class TestSongViews:
         self.client.force_authenticate(user=self.artist_user)
         
         # Crear nueva canción
-        url = reverse('song-upload')  # Asegúrate de nombrar tus URLs
+        url = reverse('song-upload')  
         audio_file = SimpleUploadedFile(
             "new_song.mp3", 
             b"file_content", 
@@ -170,7 +170,7 @@ class TestPlaylistViews:
         )
         
     def test_playlist_create_view(self):
-        url = reverse('playlist-create')  # Asegúrate de nombrar tus URLs
+        url = reverse('playlist-create') 
         data = {
             "name": "My Playlist",
             "songs": [self.song.pk]
@@ -190,7 +190,7 @@ class TestPlaylistViews:
         )
         playlist.songs.add(self.song)
         
-        url = reverse('playlist-detail', kwargs={'pk': playlist.pk})  # Asegúrate de nombrar tus URLs
+        url = reverse('playlist-detail', kwargs={'pk': playlist.pk}) 
         response = self.client.get(url, format='json')
         
         assert response.status_code == status.HTTP_200_OK

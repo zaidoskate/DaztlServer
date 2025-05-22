@@ -27,7 +27,7 @@ class TestUserSerializers:
         assert data['first_name'] == "Test"
         assert data['last_name'] == "User"
         assert data['role'] == "listener"
-        assert 'password' not in data  # Aseguramos que la contraseña no se serializa
+        assert 'password' not in data  
     
     def test_register_serializer(self):
         data = {
