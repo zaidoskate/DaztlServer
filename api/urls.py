@@ -4,14 +4,9 @@ from . import views
     
 urlpatterns = [
     # CU-01 / CU-02
-<<<<<<< HEAD
-    path('register/', views.RegisterView.as_view()),
-    path('profile/', views.ProfileUpdateView.as_view()),
-=======
     path('register/', views.RegisterView.as_view(), name='register'),
     path('profile/', views.ProfileUpdateView.as_view(), name='profile-update'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
->>>>>>> fix/login
 
     # CU-03 / CU-04
     path('songs/', views.SongListView.as_view()),
