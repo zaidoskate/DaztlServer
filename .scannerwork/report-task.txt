@@ -1,0 +1,6 @@
+projectKey=DAZTL-Api
+serverUrl=http://localhost:9000
+serverVersion=10.7.0.96327
+dashboardUrl=http://localhost:9000/dashboard?id=DAZTL-Api
+ceTaskId=34d7bff6-3889-44a2-8db2-1f1997d942ef
+ceTaskUrl=http://localhost:9000/api/ce/task?id=34d7bff6-3889-44a2-8db2-1f1997d942ef
