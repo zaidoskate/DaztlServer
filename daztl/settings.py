@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-=em%q_7nw%6v-!zg1i-qllp*e+s*2&v^+-@%!cu$h^3!61s_lb'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2']
 
 AUTH_USER_MODEL = 'api.User'
 
