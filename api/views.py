@@ -2,7 +2,8 @@ from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.db.models import Count
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 from .models import (
     User, ArtistProfile, Song, Album,
     Playlist, Notification, Like, LiveChat
@@ -20,6 +21,7 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+
 
 class ProfileUpdateView(generics.UpdateAPIView):
     serializer_class = ProfileUpdateSerializer
@@ -143,3 +145,17 @@ def unlike_artist(request, artist_id):
 def is_liked(request, artist_id):
     is_liked = Like.objects.filter(user=request.user, artist_id=artist_id).exists()
     return Response({"liked": is_liked}, status=status.HTTP_200_OK)
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomLoginView(TokenObtainPairView):
+    class CustomTokenSerializer(TokenObtainPairSerializer):
+        def validate(self, attrs):
+            data = super().validate(attrs)
+            return {
+                "token": data["access"],
+                "refresh": data["refresh"]
+            }
+    serializer_class = CustomTokenSerializer
+
