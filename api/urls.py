@@ -9,17 +9,17 @@ urlpatterns = [
     path('login/', views.CustomLoginView.as_view(), name='login'),
 
     # CU-03 / CU-04
-    path('songs/', views.SongListView.as_view()),
-    path('songs/<int:pk>/', views.SongDetailView.as_view()),
+    path('songs/', views.SongListView.as_view(), name='song-list'),
+    path('songs/<int:pk>/', views.SongDetailView.as_view(), name='song-detail'),
     path('albums/', views.AlbumListView.as_view()),
     path('artists/', views.ArtistListView.as_view()),
 
     # CU-05/06/07 Playlists
-    path('playlists/', views.PlaylistCreateView.as_view()),
-    path('playlists/<int:pk>/', views.PlaylistDetailView.as_view()),
+    path('playlists/', views.PlaylistCreateView.as_view(), name='playlist-create'),
+    path('playlists/<int:pk>/', views.PlaylistDetailView.as_view(), name='playlist-detail'),
 
     # CU-08/09 Subir contenido
-    path('songs/upload/', views.SongUploadView.as_view()),
+    path('songs/upload/', views.SongUploadView.as_view(), name='song-upload'),
     path('albums/upload/', views.AlbumUploadView.as_view()),
 
     # CU-10/11 Reportes
