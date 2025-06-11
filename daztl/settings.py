@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -66,18 +67,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'daztl.wsgi.application'
 
 # Base de datos con SQL Server
-DATABASES = {
-    'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'DaztlDB',
-        'HOST': 'localhost\\SQLEXPRESS',
-        'PORT': '',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'trusted_connection': 'yes',
-        },
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'mssql',
+            'NAME': 'DaztlDB',
+            'HOST': 'localhost\\SQLEXPRESS',
+            'PORT': '',
+            'OPTIONS': {
+                'driver': 'ODBC Driver 17 for SQL Server',
+                'trusted_connection': 'yes',
+            },
+        }
+    }
 
 # Validadores de contraseña
 AUTH_PASSWORD_VALIDATORS = [
