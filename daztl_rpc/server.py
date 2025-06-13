@@ -2,17 +2,21 @@ import grpc
 from concurrent import futures
 import time
 import requests
-import daztl_service_pb2
-import daztl_service_pb2_grpc
+import proto.daztl_service_pb2 as daztl_service_pb2
+import proto.daztl_service_pb2_grpc as daztl_service_pb2_grpc
+
 
 API_BASE_URL = "http://localhost:8000/api"
 
 class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
     def RegisterUser(self, request, context):
+        print (request)
         payload = {
             "username": request.username,
             "password": request.password,
-            "email": request.email
+            "email": request.email,
+            "first_name": request.first_name,
+            "last_name": request.last_name
         }
         try:
             res = requests.post(f"{API_BASE_URL}/register/", json=payload)
@@ -20,6 +24,8 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 return daztl_service_pb2.GenericResponse(status="success", message="User registered successfully")
             else:
                 return daztl_service_pb2.GenericResponse(status="error", message=res.text)
+        except AttributeError as ex:
+            return daztl_service_pb2.GenericResponse(status="error", message=f"AttributeError: {str(ex)}")
         except Exception as e:
             return daztl_service_pb2.GenericResponse(status="error", message=str(e))
 
@@ -31,8 +37,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
 
         try:
             res = requests.post(f"{API_BASE_URL}/login/", json=payload)
-            print("Status Code:", res.status_code)
-            print("Response Text:", res.text)
 
             if res.status_code == 200:
                 tokens = res.json()
@@ -67,7 +71,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 return daztl_service_pb2.GenericResponse(status="error", message=res.text)
         except Exception as e:
             return daztl_service_pb2.GenericResponse(status="error", message=str(e))
-
     def ListSongs(self, request, context):
         try:
             res = requests.get(f"{API_BASE_URL}/songs/")
@@ -78,9 +81,12 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     songs.append(daztl_service_pb2.SongResponse(
                         id=song.get("id"),
                         title=song.get("title"),
-                        artist=song.get("artist"),
-                        file_url=song.get("file")
+                        artist=song.get("artist_name") or str(song.get("artist")), 
+                        audio_url=song.get("audio_url"),
+                        cover_url=song.get("cover_url"),
+                        release_date=song.get("release_date", "")
                     ))
+                    print(songs)
                 return daztl_service_pb2.SongListResponse(songs=songs)
             else:
                 context.set_code(grpc.StatusCode.INTERNAL)
@@ -90,6 +96,28 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
             return daztl_service_pb2.SongListResponse()
+
+    def GetSong(self, request, context):
+        try:
+            res = requests.get(f"{API_BASE_URL}/songs/{request.id}/")
+            if res.status_code == 200:
+                song = res.json()
+                return daztl_service_pb2.SongResponse(
+                    id=song['id'],
+                    title=song['title'],
+                    artist=song['artist_name'],
+                    audio_url=song['audio_url'],
+                    cover_url=song.get('cover_url',''),
+                    release_date=song.get('release_date',''),
+                )
+            else:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details("Song not found")
+                return daztl_service_pb2.SongResponse()
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return daztl_service_pb2.SongResponse()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

@@ -1,3 +1,6 @@
+import os
+from django.utils.text import slugify
+from datetime import datetime
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
@@ -20,11 +23,15 @@ class ArtistProfile(models.Model):
     def __str__(self):
         return f"ArtistProfile: {self.user.username}"
 
-
+def clean_cover_filename(instance, filename):
+    return f"song_covers/{filename}"
+def clean_audio_filename(instance, filename):
+    return f"songs/{filename}"
 class Song(models.Model):
     title = models.CharField(max_length=255)
     artist = models.ForeignKey(ArtistProfile, on_delete=models.CASCADE, related_name='songs')
-    audio_file = models.FileField(upload_to='songs/')
+    audio_file = models.FileField(upload_to=clean_audio_filename)
+    cover_image = models.FileField(upload_to=clean_cover_filename)
     release_date = models.DateField(auto_now_add=True)
 
     def __str__(self):
