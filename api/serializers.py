@@ -11,13 +11,20 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id','username','email','first_name','last_name','role']
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
     class Meta:
         model = User
-        fields = ['username','email','password','first_name','last_name','role']
-    def create(self, data):
-        return User.objects.create_user(**data)
+        fields = ['username', 'password', 'email', 'first_name', 'last_name']
+        extra_kwargs = {'password': {'write_only': True}}
 
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            password=validated_data['password']
+        )
+        return user
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -26,9 +33,12 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 # — CU-03: Buscar contenido
 class SongSerializer(serializers.ModelSerializer):
     artist_name = serializers.CharField(source='artist.user.username', read_only=True)
+    audio_url = serializers.ImageField(source='audio_file', read_only=True)
+    cover_url = serializers.ImageField(source='cover_image', read_only=True)
     class Meta:
         model = Song
-        fields = ['id','title','artist','artist_name','audio_file','release_date']
+        fields = ['id','title','artist_name','audio_url','cover_url','release_date']
+
 
 class AlbumSerializer(serializers.ModelSerializer):
     artist_name = serializers.CharField(source='artist.user.username', read_only=True)
@@ -54,7 +64,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
 class SongUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ['title','audio_file']
+        fields = ['title','audio_file', 'cover_image']
 
 class AlbumUploadSerializer(serializers.ModelSerializer):
     song_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
