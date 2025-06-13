@@ -1,9 +1,0 @@
-Django>=4.2
-djangorestframework
-grpcio
-grpcio-tools
-pyodbc
-mssql-django
-gunicorn
-requests
-djangorestframework-simplejwt
