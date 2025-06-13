@@ -69,12 +69,14 @@ WSGI_APPLICATION = 'daztl.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'DaztlDB',
-        'HOST': 'localhost\\SQLEXPRESS',
-        'PORT': '',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', '1433'),
         'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'trusted_connection': 'yes',
+            'driver': 'ODBC Driver 18 for SQL Server',
+            'encrypt': 'no',
         },
     }
 }

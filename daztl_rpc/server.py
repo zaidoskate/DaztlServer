@@ -7,6 +7,10 @@ import daztl_service_pb2_grpc
 
 API_BASE_URL = "http://localhost:8000/api"
 
+#python -m grpc_tools.protoc -I./proto --python_out=. --grpc_python_out=. ./proto/daztl_service.proto
+#pip install -r requirements.txt
+
+
 class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
     def RegisterUser(self, request, context):
         payload = {
