@@ -21,6 +21,7 @@ urlpatterns = [
     path('playlists/create/', views.PlaylistCreateView.as_view()),
     path('playlists/<int:pk>/', views.PlaylistDetailView.as_view()),
     path('playlists/<int:pk>/add_song/', views.AddSongToPlaylistView.as_view()),
+    path('playlists/', views.PlaylistListView.as_view()),
 
     # CU-08/09 Subir contenido
     path('songs/upload/', views.SongUploadView.as_view()),

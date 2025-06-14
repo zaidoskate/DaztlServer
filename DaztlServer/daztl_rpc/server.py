@@ -244,6 +244,37 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 )
         except Exception as e:
             return daztl_service_pb2.PlaylistDetailResponse(status="error", message=str(e))
+        
+    def ListPlaylists(self, request, context):
+        try:
+            token = request.token
+            print(f"TOKEN ENVIADO: {token}")
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            response = requests.get("http://localhost:8000/api/playlists/", headers=headers)
+
+            if response.status_code == 200:
+                data = response.json()
+                playlist_messages = []
+
+                for playlist in data:
+                    playlist_msg = daztl_service_pb2.PlaylistResponse(
+                        id=playlist["id"],
+                        name=playlist["name"],
+                    )
+                    playlist_messages.append(playlist_msg)
+
+                return daztl_service_pb2.PlaylistListResponse(playlists=playlist_messages)
+
+            else:
+                context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+                context.set_details("No autorizado para obtener playlists")
+                return daztl_service_pb2.PlaylistListResponse()
+
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return daztl_service_pb2.PlaylistListResponse()
 
     @staticmethod
     def get_token_from_metadata(context):
