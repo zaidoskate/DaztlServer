@@ -126,8 +126,13 @@ class MusicServiceStub(object):
                 _registered_method=True)
         self.GetProfile = channel.unary_unary(
                 '/daztl.MusicService/GetProfile',
-                request_serializer=proto_dot_daztl__service__pb2.TokenRequest.SerializeToString,
+                request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.UserProfileResponse.FromString,
+                _registered_method=True)
+        self.RefreshToken = channel.unary_unary(
+                '/daztl.MusicService/RefreshToken',
+                request_serializer=proto_dot_daztl__service__pb2.RefreshTokenRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.LoginResponse.FromString,
                 _registered_method=True)
 
 
@@ -248,6 +253,12 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RefreshToken(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MusicServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -343,8 +354,13 @@ def add_MusicServiceServicer_to_server(servicer, server):
             ),
             'GetProfile': grpc.unary_unary_rpc_method_handler(
                     servicer.GetProfile,
-                    request_deserializer=proto_dot_daztl__service__pb2.TokenRequest.FromString,
+                    request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.UserProfileResponse.SerializeToString,
+            ),
+            'RefreshToken': grpc.unary_unary_rpc_method_handler(
+                    servicer.RefreshToken,
+                    request_deserializer=proto_dot_daztl__service__pb2.RefreshTokenRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.LoginResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -858,8 +874,35 @@ class MusicService(object):
             request,
             target,
             '/daztl.MusicService/GetProfile',
-            proto_dot_daztl__service__pb2.TokenRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.Empty.SerializeToString,
             proto_dot_daztl__service__pb2.UserProfileResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RefreshToken(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/RefreshToken',
+            proto_dot_daztl__service__pb2.RefreshTokenRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.LoginResponse.FromString,
             options,
             channel_credentials,
             insecure,

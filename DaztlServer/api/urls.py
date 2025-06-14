@@ -1,11 +1,14 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
     
 urlpatterns = [
     # CU-01 / CU-02
     path('register/', views.RegisterView.as_view(), name='register'),
-    path('profile/', views.ProfileUpdateView.as_view(), name='profile-update'),
+    path('profile/edit', views.ProfileUpdateView.as_view(), name='profile-update'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('profile/upload_picture/', views.ProfilePictureUploadView.as_view()),
     path('login/', views.CustomLoginView.as_view(), name='login'),
 
     # CU-03 / CU-04
@@ -32,5 +35,7 @@ urlpatterns = [
 
     #CU-13 Like/unlike artista
     path('artists/<int:artist_id>/like/', views.like_artist, name='like-artist'), #POST
+    #Refresh del token necesario para mantener la sesión en los clientes (editar perfil en Android)
     path('artists/<int:artist_id>/like/status/', views.is_liked, name='is-liked'), #GET
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.parsers import MultiPartParser
 from .models import (
     User, ArtistProfile, Song, Album,
     Playlist, Notification, Like, LiveChat
@@ -12,7 +13,7 @@ from .serializers import (
     RegisterSerializer, UserSerializer, ProfileUpdateSerializer,
     SongSerializer, AlbumSerializer, ArtistProfileSerializer,
     PlaylistSerializer, SongUploadSerializer, AlbumUploadSerializer,
-    LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer
+    LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer, ProfilePictureUploadSerializer
 )
 
 NotificationSerializer = None
@@ -113,6 +114,38 @@ class LiveChatCreateView(generics.CreateAPIView):
     serializer_class = LiveChatSerializer
     def perform_create(self, ser):
         ser.save(user=self.request.user)
+        # CU-XX Obtener perfil del usuario autenticado
+class ProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        profile_picture_url = ""
+        if user.profile_picture:
+            profile_picture_url = request.build_absolute_uri(user.profile_picture.url)
+        
+        return Response({
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "profile_image_url": profile_picture_url,
+        })
+class ProfilePictureUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser]
+
+    def get_object(self):
+        return self.request.user
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = ProfilePictureUploadSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 from django.http import Http404
 from rest_framework import status
