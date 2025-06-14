@@ -82,6 +82,13 @@ class AddSongToPlaylistView(APIView):
         except Song.DoesNotExist:
             return Response({"status": "error", "message": "Canción no encontrada"}, status=404)
 
+class PlaylistListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PlaylistSerializer
+
+    def get_queryset(self):
+        return Playlist.objects.filter(user=self.request.user)
+
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SongUploadSerializer
