@@ -100,3 +100,8 @@ class LikeSerializer(serializers.ModelSerializer):
         model = Like
         fields = ['id', 'user', 'artist', 'created_at']
         read_only_fields = ['id', 'user', 'created_at']
+class ProfilePictureUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['profile_picture']
+

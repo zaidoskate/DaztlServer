@@ -61,10 +61,12 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
         payload = {
             "email": request.email,
             "first_name": request.first_name,
-            "last_name": request.last_name
+            "last_name": request.last_name,
+            "username": request.username,
+            "password": request.password
         }
         try:
-            res = requests.put(f"{API_BASE_URL}/profile/", headers=headers, json=payload)
+            res = requests.put(f"{API_BASE_URL}/profile/edit", headers=headers, json=payload)
             if res.status_code == 200:
                 return daztl_service_pb2.GenericResponse(status="success", message="Profile updated successfully")
             else:
@@ -118,7 +120,55 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
             return daztl_service_pb2.SongResponse()
+        
+    def RefreshToken(self, request, context):
+        try:
+            payload = {"refresh": request.refresh_token}
+            res = requests.post(f"{API_BASE_URL}/refresh/", json=payload)
 
+            if res.status_code == 200:
+                tokens = res.json()
+                return daztl_service_pb2.LoginResponse(
+                    access_token=tokens.get("access") or tokens.get("token"),
+                    refresh_token=tokens.get("refresh")
+                )
+            else:
+                context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+                context.set_details("Invalid refresh token")
+                return daztl_service_pb2.LoginResponse()
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(str(e))
+            return daztl_service_pb2.LoginResponse()
+        
+    def GetProfile(self, request, context):
+        metadata = dict(context.invocation_metadata())
+        auth_header = metadata.get("authorization")
+
+        if not auth_header:
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization header")
+
+        headers = {
+            "Authorization": auth_header
+        }
+
+        response = requests.get("http://localhost:8000/api/profile/", headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            print(data.get("profile_image_url"))
+            return daztl_service_pb2.UserProfileResponse(
+                username=data["username"],
+                email=data["email"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                profile_image_url=data.get("profile_image_url", "")
+                )
+        
+        elif response.status_code == 401:
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Token inválido o expirado")
+        else:
+            context.abort(grpc.StatusCode.INTERNAL, "Error al consultar el perfil")
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     daztl_service_pb2_grpc.add_MusicServiceServicer_to_server(MusicServiceServicer(), server)
