@@ -67,6 +67,21 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
 
+class AddSongToPlaylistView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        song_id = request.data.get("song_id")
+        try:
+            playlist = Playlist.objects.get(pk=pk, user=request.user)
+            song = Song.objects.get(pk=song_id)
+            playlist.songs.add(song)
+            return Response({"status": "success", "message": "Canción agregada correctamente"}, status=200)
+        except Playlist.DoesNotExist:
+            return Response({"status": "error", "message": "Playlist no encontrada"}, status=404)
+        except Song.DoesNotExist:
+            return Response({"status": "error", "message": "Canción no encontrada"}, status=404)
+
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SongUploadSerializer

@@ -67,10 +67,12 @@ class ArtistProfileSerializer(serializers.ModelSerializer):
 
 # — CU-05/06/07: Playlists
 class PlaylistSerializer(serializers.ModelSerializer):
-    songs = serializers.PrimaryKeyRelatedField(many=True, queryset=Song.objects.all())
+    songs = SongSerializer(many=True, read_only=True)  # <-- Aquí la corrección
+
     class Meta:
         model = Playlist
         fields = ['id','name','songs','created_at']
+
 
 # — CU-08/09: Subir contenido
 class SongUploadSerializer(serializers.ModelSerializer):
