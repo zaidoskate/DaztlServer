@@ -248,7 +248,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
     def ListPlaylists(self, request, context):
         try:
             token = request.token
-            print(f"TOKEN ENVIADO: {token}")
             headers = {"Authorization": f"Bearer {token}"}
             
             response = requests.get("http://localhost:8000/api/playlists/", headers=headers)
