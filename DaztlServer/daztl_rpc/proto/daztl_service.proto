@@ -9,6 +9,7 @@ service MusicService {
     rpc RegisterUser (RegisterRequest) returns (GenericResponse);
     rpc UpdateProfile (UpdateProfileRequest) returns (GenericResponse);
     rpc LoginUser (LoginRequest) returns (LoginResponse);
+    rpc RegisterArtist(RegisterArtistRequest) returns (GenericResponse);
 
     rpc ListSongs (Empty) returns (SongListResponse);
     rpc GetSong (SongIdRequest) returns (SongResponse);
@@ -45,6 +46,15 @@ message RegisterRequest {
     string email = 3;
     string first_name = 4;
     string last_name = 5;
+}
+
+message RegisterArtistRequest {
+    string username = 1;
+    string email = 2;
+    string password = 3;
+    string first_name = 4;
+    string last_name = 5;
+    string bio = 6;
 }
 
 message UpdateProfileRequest {
