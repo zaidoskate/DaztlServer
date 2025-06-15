@@ -74,6 +74,11 @@ message LoginRequest {
 message LoginResponse {
     string access_token = 1;
     string refresh_token = 2;
+    string role = 3;
+    bool is_artist = 4;
+    int32 user_id = 5;
+    string username =6;
+    int32 artist_id = 7;
 }
 
 message SongIdRequest {

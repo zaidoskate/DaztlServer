@@ -264,9 +264,22 @@ class CustomLoginView(TokenObtainPairView):
     class CustomTokenSerializer(TokenObtainPairSerializer):
         def validate(self, attrs):
             data = super().validate(attrs)
+            user = self.user
+            
+            #Verificacion artista
+            is_artist = user.role == 'artist'
+            artist_profile_id = user.artistprofile.id
             return {
                 "token": data["access"],
-                "refresh": data["refresh"]
+                "refresh": data["refresh"],
+                "user_info": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role,
+                    "is_artist": is_artist,
+                    "artist_profile_id": artist_profile_id
+                }
             }
     serializer_class = CustomTokenSerializer
 

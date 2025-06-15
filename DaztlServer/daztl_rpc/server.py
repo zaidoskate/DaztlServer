@@ -91,9 +91,15 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             res = requests.post(f"{API_BASE_URL}/login/", json=payload, timeout=60)
             if res.status_code == 200:
                 tokens = res.json()
+                user_info = tokens.get("user_info", {})
                 return daztl_service_pb2.LoginResponse(
                     access_token=tokens.get("token"), 
-                    refresh_token=tokens.get("refresh")
+                    refresh_token=tokens.get("refresh"),
+                    role=user_info.get("role"),
+                    is_artist=user_info.get("is_artist"),
+                    user_id=user_info.get("id"),
+                    username=user_info.get("username"),
+                    artist_id=user_info.get("artist_profile_id")
                 )
             else:
                 context.set_code(grpc.StatusCode.UNAUTHENTICATED)
