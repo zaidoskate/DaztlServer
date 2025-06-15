@@ -10,6 +10,7 @@ urlpatterns = [
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('profile/upload_picture/', views.ProfilePictureUploadView.as_view()),
     path('login/', views.CustomLoginView.as_view(), name='login'),
+    path('auth/register-artist/', views.RegisterArtistView.as_view(), name='register-artist'),
 
     # CU-03 / CU-04
     path('songs/', views.SongListView.as_view()),

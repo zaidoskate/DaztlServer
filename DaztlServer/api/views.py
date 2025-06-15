@@ -22,6 +22,62 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
+    
+
+# Agrega esta nueva vista al final de tu views.py
+class RegisterArtistView(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        # Extraer datos del request
+        username = request.data.get('username')
+        email = request.data.get('email')
+        password = request.data.get('password')
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        bio = request.data.get('bio', '')
+        
+        try:
+            # Verificar si el usuario ya existe
+            if User.objects.filter(username=username).exists():
+                return Response({
+                    'error': 'El nombre de usuario ya existe'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if User.objects.filter(email=email).exists():
+                return Response({
+                    'error': 'El email ya está registrado'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Crear usuario con rol de artista
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                role='artist'  
+            )
+            
+            # Crear perfil de artista
+            artist_profile = ArtistProfile.objects.create(
+                user=user,
+                bio=bio
+            )
+            
+            return Response({
+                'message': 'Artista registrado exitosamente',
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'artist_profile_id': artist_profile.id
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class ProfileUpdateView(generics.UpdateAPIView):
@@ -208,9 +264,22 @@ class CustomLoginView(TokenObtainPairView):
     class CustomTokenSerializer(TokenObtainPairSerializer):
         def validate(self, attrs):
             data = super().validate(attrs)
+            user = self.user
+            
+            #Verificacion artista
+            is_artist = user.role == 'artist'
+            artist_profile_id = user.artistprofile.id
             return {
                 "token": data["access"],
-                "refresh": data["refresh"]
+                "refresh": data["refresh"],
+                "user_info": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "role": user.role,
+                    "is_artist": is_artist,
+                    "artist_profile_id": artist_profile_id
+                }
             }
     serializer_class = CustomTokenSerializer
 
