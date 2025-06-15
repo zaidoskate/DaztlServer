@@ -268,7 +268,12 @@ class CustomLoginView(TokenObtainPairView):
             
             #Verificacion artista
             is_artist = user.role == 'artist'
-            artist_profile_id = user.artistprofile.id
+            artist_profile_id = None
+            if is_artist:
+                try:
+                    artist_profile_id = user.artisprofile.id
+                except ArtistProfile.DoesNotExist:
+                    artist_profile_id = None
             return {
                 "token": data["access"],
                 "refresh": data["refresh"],
