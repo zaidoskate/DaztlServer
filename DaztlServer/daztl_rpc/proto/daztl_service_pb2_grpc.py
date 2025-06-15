@@ -49,6 +49,11 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.LoginRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.LoginResponse.FromString,
                 _registered_method=True)
+        self.RegisterArtist = channel.unary_unary(
+                '/daztl.MusicService/RegisterArtist',
+                request_serializer=proto_dot_daztl__service__pb2.RegisterArtistRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
+                _registered_method=True)
         self.ListSongs = channel.unary_unary(
                 '/daztl.MusicService/ListSongs',
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
@@ -167,6 +172,12 @@ class MusicServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def LoginUser(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RegisterArtist(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -309,6 +320,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.LoginUser,
                     request_deserializer=proto_dot_daztl__service__pb2.LoginRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.LoginResponse.SerializeToString,
+            ),
+            'RegisterArtist': grpc.unary_unary_rpc_method_handler(
+                    servicer.RegisterArtist,
+                    request_deserializer=proto_dot_daztl__service__pb2.RegisterArtistRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
             ),
             'ListSongs': grpc.unary_unary_rpc_method_handler(
                     servicer.ListSongs,
@@ -492,6 +508,33 @@ class MusicService(object):
             '/daztl.MusicService/LoginUser',
             proto_dot_daztl__service__pb2.LoginRequest.SerializeToString,
             proto_dot_daztl__service__pb2.LoginResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RegisterArtist(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/RegisterArtist',
+            proto_dot_daztl__service__pb2.RegisterArtistRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.GenericResponse.FromString,
             options,
             channel_credentials,
             insecure,
