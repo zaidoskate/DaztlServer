@@ -67,7 +67,7 @@ class ArtistProfileSerializer(serializers.ModelSerializer):
 
 # — CU-05/06/07: Playlists
 class PlaylistSerializer(serializers.ModelSerializer):
-    songs = SongSerializer(many=True, read_only=True)  # <-- Aquí la corrección
+    songs = SongSerializer(many=True, read_only=True)
 
     class Meta:
         model = Playlist

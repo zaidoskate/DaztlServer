@@ -117,6 +117,8 @@ message AlbumListResponse {
 message AlbumResponse {
     int32 id = 1;
     string title = 2;
+    string artist_name = 3;
+    string cover_url = 4;
 }
 
 message ArtistListResponse {
@@ -126,6 +128,7 @@ message ArtistListResponse {
 message ArtistResponse {
     int32 id = 1;
     string name = 2;
+    string profile_picture = 3;
 }
 
 message CreatePlaylistRequest {
