@@ -210,6 +210,33 @@ class ProfileView(APIView):
             "last_name": user.last_name,
             "profile_image_url": profile_picture_url,
         })
+        
+class ArtistProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        if user.role != 'artist':
+            return Response({
+                'error': 'Solo los artistas pueden acceder a este endpoint'
+            }, status=status.HTTP_403_FORBIDDEN)
+            
+        artist_profile = user.artistprofile
+        profile_picture_url = ""
+        if user.profile_picture:
+            profile_picture_url = request.build_absolute_uri(user.profile_picture.url)
+        
+        return Response({
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "profile_image_url": profile_picture_url,
+            "bio": artist_profile.bio,
+            "artist_profile_id": artist_profile.id
+            
+        })
 class ProfilePictureUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
@@ -272,7 +299,7 @@ class CustomLoginView(TokenObtainPairView):
             artist_profile_id = None
             if is_artist:
                 try:
-                    artist_profile_id = user.artisprofile.id
+                    artist_profile_id = user.artistprofile.id
                 except ArtistProfile.DoesNotExist:
                     artist_profile_id = None
             return {

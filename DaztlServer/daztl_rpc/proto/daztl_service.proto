@@ -35,6 +35,7 @@ service MusicService {
     rpc IsArtistLiked (ArtistIdRequest) returns (LikeStatusResponse);
     rpc SearchSongs (SearchRequest) returns (SongListResponse);
     rpc GetProfile (Empty) returns (UserProfileResponse);
+    rpc GetArtistProfile (Empty) returns (ArtistProfileResponse);
     rpc RefreshToken (RefreshTokenRequest) returns (LoginResponse);
     rpc GlobalSearch(SearchRequest) returns (GlobalSearchResponse);
 }
@@ -226,6 +227,16 @@ message UserProfileResponse {
     string first_name = 3;
     string last_name = 4;
     string profile_image_url = 5;
+}
+
+message ArtistProfileResponse {
+    string username = 1;
+    string email = 2;
+    string first_name = 3;
+    string last_name = 4;
+    string profile_image_url = 5;
+    string bio = 6;
+    int32 artist_profile_id = 7;
 }
 
 message RefreshTokenRequest {

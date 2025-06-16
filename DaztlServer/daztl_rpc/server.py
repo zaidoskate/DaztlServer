@@ -289,6 +289,33 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.abort(grpc.StatusCode.UNAUTHENTICATED, "Token inválido o expirado")
         else:
             context.abort(grpc.StatusCode.INTERNAL, "Error al consultar el perfil")
+    
+    def GetArtistProfile(self, request, context):
+        metadata = dict(context.invocation_metadata())
+        auth_header = metadata.get("authorization")
+
+        if not auth_header:
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization header")
+
+        headers = {"Authorization": auth_header}
+        response = requests.get(f"{API_BASE_URL}/artist/profile/", headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+            return daztl_service_pb2.ArtistProfileResponse(
+                username=data["username"],
+                email=data["email"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                profile_image_url=data.get("profile_image_url", ""),
+                bio=data.get("bio", ""),
+                artist_profile_id=data.get("artist_profile_id", 0)
+            )
+        elif response.status_code == 401:
+            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Token inválido o expirado")
+        else:
+            context.abort(grpc.StatusCode.INTERNAL, "Error al consultar el perfil de artista")
+
 
     def CreatePlaylist(self, request, context):
         headers = make_auth_header(request.token)
