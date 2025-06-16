@@ -144,6 +144,7 @@ class PlaylistListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
+    
 
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -288,3 +289,25 @@ class CustomLoginView(TokenObtainPairView):
             }
     serializer_class = CustomTokenSerializer
 
+class GlobalSearchView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        query = request.query_params.get('q', '')
+
+        songs = Song.objects.filter(title__icontains=query)
+        albums = Album.objects.filter(title__icontains=query)
+        artists = ArtistProfile.objects.filter(user__username__icontains=query)
+        playlists = Playlist.objects.filter(name__icontains=query)
+
+        songs_data = SongSerializer(songs, many=True).data
+        albums_data = AlbumSerializer(albums, many=True).data
+        artists_data = ArtistProfileSerializer(artists, many=True).data
+        playlists_data = PlaylistSerializer(playlists, many=True).data
+
+        return Response({
+            'songs': songs_data,
+            'albums': albums_data,
+            'artists': artists_data,
+            'playlists': playlists_data
+        })

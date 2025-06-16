@@ -36,6 +36,7 @@ service MusicService {
     rpc SearchSongs (SearchRequest) returns (SongListResponse);
     rpc GetProfile (Empty) returns (UserProfileResponse);
     rpc RefreshToken (RefreshTokenRequest) returns (LoginResponse);
+    rpc GlobalSearch(SearchRequest) returns (GlobalSearchResponse);
 }
 
 message Empty {}
@@ -98,6 +99,13 @@ message SearchRequest {
     string query = 1;
 }
 
+message GlobalSearchResponse {
+  repeated SongResponse songs = 1;
+  repeated AlbumResponse albums = 2;
+  repeated ArtistResponse artists = 3;
+  repeated PlaylistResponse playlists = 4;
+}
+
 message SongListResponse {
     repeated SongResponse songs = 1;
 }
@@ -140,12 +148,14 @@ message PlaylistDetailResponse {
   repeated SongResponse songs = 3;
   string status = 4;
   string message = 5;
+  string cover_url = 6;
 }
 
 message PlaylistResponse {
     int32 id = 1;
     string name = 2;
     repeated SongResponse songs = 3;
+    string cover_url = 4;
 }
 
 message AddSongToPlaylistRequest {

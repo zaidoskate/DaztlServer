@@ -71,7 +71,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Playlist
-        fields = ['id','name','songs','created_at']
+        fields = ['id','name','songs','created_at', 'cover']
 
 
 # — CU-08/09: Subir contenido
