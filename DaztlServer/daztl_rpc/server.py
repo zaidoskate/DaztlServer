@@ -604,6 +604,96 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
         except Exception as e:
             context.abort(grpc.StatusCode.INTERNAL, f"Excepción: {str(e)}")
 
+    def ListAlbums(self, request, context):
+        try:
+            response = requests.get("http://localhost:8000/api/albums/", timeout=60)
+
+            if response.status_code == 200:
+                data = response.json()
+                album_messages = []
+
+                for album in data:
+                    cover_url = album.get("cover_image") or ""
+                    artist_name = album.get("artist_name") or ""
+
+                    album_msg = daztl_service_pb2.AlbumResponse(
+                        id=album.get("id"),
+                        title=album.get("title"),
+                        artist_name=artist_name,
+                        cover_url=cover_url
+                    )
+                    album_messages.append(album_msg)
+
+                return daztl_service_pb2.AlbumListResponse(albums=album_messages)
+
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details("Failed to fetch albums")
+                return daztl_service_pb2.AlbumListResponse()
+
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.AlbumListResponse()
+
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.AlbumListResponse()
+
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.AlbumListResponse()
+
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.AlbumListResponse()
+
+    def ListArtists(self, request, context):
+        try:
+            response = requests.get("http://localhost:8000/api/artists/", timeout=60)
+
+            if response.status_code == 200:
+                data = response.json()
+                artist_messages = []
+
+                for artist in data:
+                    artist_messages.append(daztl_service_pb2.ArtistResponse(
+                        id=artist.get("id"),
+                        name=artist.get("user", {}).get("username", ""),
+                        profile_picture=artist.get("profile_picture", "")
+                    ))
+
+                return daztl_service_pb2.ArtistListResponse(artists=artist_messages)
+
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details("Failed to fetch artists")
+                return daztl_service_pb2.ArtistListResponse()
+
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.ArtistListResponse()
+
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.ArtistListResponse()
+
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.ArtistListResponse()
+
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.ArtistListResponse()
+
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     daztl_service_pb2_grpc.add_MusicServiceServicer_to_server(MusicServiceServicer(), server)
