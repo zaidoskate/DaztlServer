@@ -41,4 +41,7 @@ urlpatterns = [
     #Refresh del token necesario para mantener la sesión en los clientes (editar perfil en Android)
     path('artists/<int:artist_id>/like/status/', views.is_liked, name='is-liked'), #GET
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    #Implementacion de busqueda generalizada para escritorio
+    path('search/', views.GlobalSearchView.as_view(), name='global-search'),
+
 ]

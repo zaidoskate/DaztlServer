@@ -53,6 +53,7 @@ class Playlist(models.Model):
     name = models.CharField(max_length=255)
     songs = models.ManyToManyField(Song)
     created_at = models.DateTimeField(auto_now_add=True)
+    cover = models.ImageField(upload_to='playlist_covers/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} - {self.user.username}"

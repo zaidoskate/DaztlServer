@@ -438,15 +438,18 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 playlist_messages = []
 
                 for playlist in data:
+                    cover_url = playlist.get("cover") or ""
                     playlist_msg = daztl_service_pb2.PlaylistResponse(
                         id=playlist["id"],
                         name=playlist["name"],
+                        cover_url=cover_url,
                     )
                     playlist_messages.append(playlist_msg)
 
                 return daztl_service_pb2.PlaylistListResponse(playlists=playlist_messages)
 
             else:
+                print (response)
                 context.set_code(grpc.StatusCode.UNAUTHENTICATED)
                 context.set_details("No autorizado para obtener playlists")
                 return daztl_service_pb2.PlaylistListResponse()
@@ -502,6 +505,75 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 return daztl_service_pb2.SongListResponse(songs=songs)
             else:
                 context.abort(grpc.StatusCode.INTERNAL, "Error al buscar canciones en el backend")
+        except Exception as e:
+            context.abort(grpc.StatusCode.INTERNAL, f"Excepción: {str(e)}")
+
+
+    def GlobalSearch(self, request, context):
+        query = request.query
+        token = self.get_token_from_metadata(context)
+
+        try:
+            response = requests.get(
+                f"{API_BASE_URL}/search/",
+                headers={"Authorization": f"Bearer {token}"},
+                params={"q": query}
+            )
+
+            if response.status_code != 200:
+                context.abort(grpc.StatusCode.INTERNAL, "Error al buscar contenido en el backend")
+
+            data = response.json()
+
+            songs = [
+                daztl_service_pb2.SongResponse(
+                    id=s["id"],
+                    title=s["title"],
+                    artist=s.get("artist_name", ""),
+                    audio_url=s["audio_url"],
+                    cover_url=s["cover_url"],
+                    release_date=s["release_date"]
+                ) for s in data.get("songs", [])
+            ]
+
+            albums = [
+                daztl_service_pb2.AlbumResponse(
+                    id=a["id"],
+                    title=a["title"]
+                ) for a in data.get("albums", [])
+            ]
+
+            artists = [
+                daztl_service_pb2.ArtistResponse(
+                    id=ar["id"],
+                    name=ar["user"]["username"]
+                ) for ar in data.get("artists", [])
+            ]
+
+            playlists = [
+                daztl_service_pb2.PlaylistResponse(
+                    id=p["id"],
+                    name=p["name"],
+                    songs=[
+                        daztl_service_pb2.SongResponse(
+                            id=s["id"],
+                            title=s["title"],
+                            artist=s.get("artist", ""),
+                            audio_url=s["audio_url"],
+                            cover_url=s["cover_url"],
+                            release_date=s["release_date"]
+                        ) for s in p.get("songs", [])
+                    ]
+                ) for p in data.get("playlists", [])
+            ]
+
+            return daztl_service_pb2.GlobalSearchResponse(
+                songs=songs,
+                albums=albums,
+                artists=artists,
+                playlists=playlists
+            )
+
         except Exception as e:
             context.abort(grpc.StatusCode.INTERNAL, f"Excepción: {str(e)}")
 
