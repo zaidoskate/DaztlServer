@@ -210,7 +210,8 @@ message PlaylistListResponse {
 message UploadSongRequest {
     string token = 1;
     string title = 2;
-    string file_url = 3;
+    bytes audio_file = 3;  
+    bytes cover_image = 4;
 }
 
 message UploadAlbumRequest {

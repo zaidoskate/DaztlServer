@@ -1176,115 +1176,117 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
     
     def UploadSong(self, request, context):
         try:
+            # 1. Autenticación y verificación de artista
             headers = make_auth_header(request.token)
             auth_check = requests.get(
                 f"{API_BASE_URL}/profile/",
                 headers=headers,
                 timeout=10
             )
+            
             if auth_check.status_code != 200:
                 context.set_code(grpc.StatusCode.UNAUTHENTICATED)
                 context.set_details("Token inválido o expirado")
-                return daztl_service_pb2.UploadSongResponse(
+                return daztl_service_pb2.GenericResponse(
                     status="error",
                     message="Authentication failed"
                 )
+                
             user_data = auth_check.json()
-            if not user_data.get("is_artist", False):
-                context.set_code(grpc.StatusCode.PERMISSION_DENIED)
-                context.set_details("Solo los artistas pueden subir canciones")
-                return daztl_service_pb2.UploadSongResponse(
-                    status="error",
-                    message="Only artists can upload songs"
-                )
-
-            files = {}
+          
+            # 2. Preparación del payload multipart
             timestamp = int(time.time())
             boundary = '----WebKitFormBoundary' + ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            body = io.BytesIO()
             
-            body = bytearray()
+            def add_form_field(field_name, value, filename=None, content_type=None):
+                body.write(f'--{boundary}\r\n'.encode())
+                body.write(f'Content-Disposition: form-data; name="{field_name}"'.encode())
+                if filename:
+                    body.write(f'; filename="{filename}"'.encode())
+                body.write(b'\r\n')
+                if content_type:
+                    body.write(f'Content-Type: {content_type}\r\n'.encode())
+                body.write(b'\r\n')
+                if isinstance(value, bytes):
+                    body.write(value)
+                else:
+                    body.write(str(value).encode())
+                body.write(b'\r\n')
             
-            for key, value in {
-                'title': request.title,
-                'artist': str(user_data.get('artist_profile_id')),
-                'release_date': request.release_date if request.release_date else time.timezone.now().date().isoformat(),
-                'genre': request.genre if request.genre else ''
-            }.items():
-                body.extend(f'--{boundary}\r\n'.encode())
-                body.extend(f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode())
-                body.extend(f'{value}\r\n'.encode())
+            # Campos del formulario
+            add_form_field('title', request.title)
+            add_form_field('artist', str(user_data.get('artist_profile_id')))
+            add_form_field('release_date', request.release_date if request.release_date else datetime.now().date().isoformat())
+            add_form_field('genre', request.genre if request.genre else '')
             
+            # Archivo de audio
             audio_filename = f"song_{timestamp}_{request.title.replace(' ', '_')}.mp3"
-            body.extend(f'--{boundary}\r\n'.encode())
-            body.extend(f'Content-Disposition: form-data; name="audio_file"; filename="{audio_filename}"\r\n'.encode())
-            body.extend(b'Content-Type: audio/mpeg\r\n\r\n')
-            body.extend(request.audio_file)
-            body.extend(b'\r\n')
+            add_form_field('audio_file', request.audio_file, 
+                        filename=audio_filename, 
+                        content_type='audio/mpeg')
             
+            # Imagen de portada (si existe)
             if request.cover_image:
                 cover_filename = f"cover_{timestamp}_{request.title.replace(' ', '_')}.jpg"
-                body.extend(f'--{boundary}\r\n'.encode())
-                body.extend(f'Content-Disposition: form-data; name="cover_image"; filename="{cover_filename}"\r\n'.encode())
-                body.extend(b'Content-Type: image/jpeg\r\n\r\n')
-                body.extend(request.cover_image)
-                body.extend(b'\r\n')
+                add_form_field('cover_image', request.cover_image,
+                            filename=cover_filename,
+                            content_type='image/jpeg')
             
-            body.extend(f'--{boundary}--\r\n'.encode())
+            body.write(f'--{boundary}--\r\n'.encode())
             
+            # 3. Envío a la API
             headers = make_auth_header(request.token)
             headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
             
             response = requests.post(
                 f"{API_BASE_URL}/songs/upload/",
                 headers=headers,
-                data=body,
+                data=body.getvalue(),
                 timeout=60
             )
             
             if response.status_code == 201:
                 song_data = response.json()
                 
-                notify_response = requests.post(
-                    f"{API_BASE_URL}/notifications/create/",
-                    headers=headers,
-                    json={
-                        'message': f"Nueva canción: {request.title}. ",
-                        'artist_id': user_data['artist_profile_id'],
-                        'song_id': song_data['id'],
-                        'is_broadcast': True
-                    },
-                    timeout=10
-                )
+                # Crear notificación
+                try:
+                    requests.post(
+                        f"{API_BASE_URL}/notifications/create/",
+                        headers=headers,
+                        json={
+                            'message': f"Nueva canción: {request.title}",
+                            'artist_id': user_data['artist_profile_id'],
+                            'song_id': song_data['id'],
+                            'is_broadcast': True
+                        },
+                        timeout=10
+                    )
+                except requests.exceptions.RequestException:
+                    pass
                 
-                return daztl_service_pb2.UploadSongResponse(
-                    song_id=song_data['id'],
-                    title=song_data['title'],
-                    audio_url=song_data['audio_url'],
-                    cover_url=song_data.get('cover_url', ''),
+                return daztl_service_pb2.GenericResponse(
                     status="success",
-                    message="Song uploaded successfully"
+                    message="Song uploaded successfully",
                 )
             else:
                 context.set_code(grpc.StatusCode.INTERNAL)
-                return daztl_service_pb2.UploadSongResponse(
+                return daztl_service_pb2.GenericResponse(
                     status="error",
-                    message=response.text
+                    message=f"API Error: {response.text[:200]}"
                 )
 
         except requests.exceptions.ConnectionError:
             context.set_code(grpc.StatusCode.UNAVAILABLE)
-            context.set_details("Backend API unreachable")
-            return daztl_service_pb2.UploadSongResponse(
+            return daztl_service_pb2.GenericResponse(
                 status="error",
                 message="Backend API unreachable"
             )
-            
         except Exception as e:
             context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Internal server error: {str(e)}")
-            return daztl_service_pb2.UploadSongResponse(
+            return daztl_service_pb2.GenericResponse(
                 status="error",
-                message=f"Internal server error: {str(e)}"
+                message=f"Internal error: {str(e)}"
             )
             
         
