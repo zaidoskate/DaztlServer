@@ -9,6 +9,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser
 from rest_framework.parsers import FormParser
 from django.db import IntegrityError
+import os
+from rest_framework.exceptions import ValidationError
+
 from .models import (
     User, ArtistProfile, Song, Album,
     Playlist, Notification, Like, LiveChat
@@ -204,12 +207,63 @@ class SongUploadView(generics.CreateAPIView):
         artist_profile = self.request.user.artistprofile
         serializer.save(artist=artist_profile)
 
+
 class AlbumUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = AlbumSerializer
-    def perform_create(self, ser):
-        artist_profile = self.request.user.artistprofile
-        ser.save(artist=artist_profile)
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def create(self, request, *args, **kwargs):
+        if request.user.role != 'artist':
+            return Response(
+                {'error': 'Solo artistas pueden subir álbumes'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        
+        title = request.data.get('title')
+        cover_image = request.FILES.get('cover_image')
+        songs = request.FILES.getlist('songs')  
+        
+        if not title:
+            raise ValidationError({'title': 'Este campo es requerido'})
+        if not cover_image:
+            raise ValidationError({'cover_image': 'Se requiere portada para el álbum'})
+        if not songs:
+            raise ValidationError({'songs': 'Debe incluir al menos una canción'})
+        
+        try:
+            artist_profile = request.user.artistprofile
+            album = Album.objects.create(
+                title=title,
+                artist=artist_profile,
+                cover_image=cover_image
+            )
+            
+            created_songs = []
+            for i, audio_file in enumerate(songs):
+                song_title = request.POST.get(f'song_{i}_title', '')
+                
+                if not song_title:
+                    song_title = os.path.splitext(audio_file.name)[0]  
+                
+                song = Song.objects.create(
+                    title=song_title,
+                    artist=artist_profile,
+                    audio_file=audio_file,
+                    release_date=timezone.now()
+                )
+                created_songs.append(song)
+            
+            album.songs.set(created_songs)
+            
+            serializer = AlbumSerializer(album)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class AddSongToAlbum(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -76,7 +76,14 @@ class ArtistProfileUpdateSerializer(serializers.ModelSerializer):
 class SongSerializer(serializers.ModelSerializer):
     artist_name = serializers.CharField(source='artist.user.username', read_only=True)
     audio_url = serializers.FileField(source='audio_file', read_only=True)
-    cover_url = serializers.ImageField(source='cover_image', read_only=True)
+    cover_url = serializers.SerializerMethodField()
+    
+    def get_cover_url(self, obj):
+        if obj.cover_image:
+            return obj.cover_image.url
+        if hasattr(obj, 'album') and obj.album.cover_image:
+            return obj.album.cover_image.url
+        return None
     class Meta:
         model = Song
         fields = ['id','title','artist_name','audio_url','cover_url','release_date']

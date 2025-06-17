@@ -233,6 +233,14 @@ message UploadSongRequest {
 message UploadAlbumRequest {
     string token = 1;
     string title = 2;
+    bytes cover_image = 3;
+    repeated AlbumSong songs = 4;
+}
+
+message AlbumSong {
+    string title = 1;        
+    bytes audio_file = 2;     
+    string filename = 3;      
 }
 
 message ReportResponse {

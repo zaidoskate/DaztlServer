@@ -31,7 +31,10 @@ class Song(models.Model):
     title = models.CharField(max_length=255)
     artist = models.ForeignKey(ArtistProfile, on_delete=models.CASCADE, related_name='songs')
     audio_file = models.FileField(upload_to=clean_audio_filename)
-    cover_image = models.ImageField(upload_to=clean_cover_filename)
+    cover_image = models.ImageField(upload_to=clean_cover_filename, 
+        blank=True,  
+        null=True  
+    )
     release_date = models.DateField(auto_now_add=True)
 
     def __str__(self):

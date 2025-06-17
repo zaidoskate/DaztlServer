@@ -10,6 +10,7 @@ import proto.daztl_service_pb2 as daztl_service_pb2
 import proto.daztl_service_pb2_grpc as daztl_service_pb2_grpc
 import datetime
 import io
+import os
 
 API_BASE_URL = "http://localhost:8000/api"
 
@@ -1355,16 +1356,141 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 status="error",
                 message=f"Internal error: {str(e)}"
             )
+            
+    def UploadAlbum(self, request, context):
+        try:
+            headers = make_auth_header(request.token)
+            auth_check = requests.get(
+                f"{API_BASE_URL}/profile/",
+                headers=headers,
+                timeout=60
+            )
+            
+            if auth_check.status_code != 200:
+                context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+                context.set_details("Token inválido o expirado")
+                return daztl_service_pb2.GenericResponse(
+                    status="error",
+                    message="Authentication failed"
+                )
+                
+            user_data = auth_check.json()
+            
+            # Verificar si el usuario es artista
+            if 'artist_profile_id' not in user_data:
+                artist_check = requests.get(
+                    f"{API_BASE_URL}/artist/profile/",
+                    headers=headers,
+                    timeout=60
+                )
+                if artist_check.status_code != 200:
+                    context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+                    context.set_details("Usuario no es artista")
+                    return daztl_service_pb2.GenericResponse(
+                        status="error",
+                        message="User is not an artist"
+                    )
+                user_data = artist_check.json()
+            
+            # 1. Preparar datos
+            album_title = request.title
+            cover_image = request.cover_image
+            
+            # 2. Validar datos
+            if not album_title:
+                return daztl_service_pb2.GenericResponse(
+                    status="error",
+                    message="El título del álbum es requerido"
+                )
+            
+            if not cover_image:
+                return daztl_service_pb2.GenericResponse(
+                    status="error",
+                    message="Se requiere portada para el álbum"
+                )
+            
+            # 3. Preparar payload para el API REST
+            payload = {
+                'title': album_title,
+            }
+            
+            # 4. Preparar archivos como lista de tuplas
+            files = [
+                ('cover_image', ('cover.jpg', cover_image, 'image/jpeg'))
+            ]
+            
+            # 5. Procesar canciones 
+            for i, song in enumerate(request.songs):
+                filename = song.filename if song.filename else f'song_{i}.mp3'
+                
+                song_title = os.path.splitext(filename)[0]
+                
+                payload[f'song_{i}_title'] = song_title
+                
+                files.append((
+                    'songs',  
+                    (filename, song.audio_file, 'audio/mpeg') 
+                ))
+            
+            # 6. Llamar al API Django
+            response = requests.post(
+                f"{API_BASE_URL}/albums/upload/",
+                headers=headers,
+                data=payload,
+                files=files,
+                timeout=120
+            )
+            
+            # 7. Manejar respuesta
+            if response.status_code == 201:
+                return daztl_service_pb2.GenericResponse(
+                    status="success",
+                    message="Álbum creado exitosamente"
+                )
+            else:
+                # Mejorar mensaje de error con detalles del backend
+                error_detail = f"Backend error {response.status_code}: {response.text}"
+                return daztl_service_pb2.GenericResponse(
+                    status="error",
+                    message=error_detail
+                )
+                
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.GenericResponse(
+                status="error",
+                message="Backend API unreachable"
+            )
+        except Exception as e:
+            # Registrar el error completo para diagnóstico
+            import traceback
+            error_details = f"Internal error: {str(e)}\n{traceback.format_exc()}"
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(error_details)
+            return daztl_service_pb2.GenericResponse(
+                status="error",
+                message=error_details
+            )
 
 
             
         
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    options = [
+        ('grpc.max_receive_message_length', 50 * 1024 * 1024), 
+        ('grpc.max_send_message_length', 50 * 1024 * 1024)       
+    ]
+    
+    server = grpc.server(
+        futures.ThreadPoolExecutor(max_workers=10),
+        options=options
+    )
+    
     daztl_service_pb2_grpc.add_MusicServiceServicer_to_server(MusicServiceServicer(), server)
     server.add_insecure_port("[::]:50051")
     server.start()
-    print("gRPC server running on port 50051...")
+    print("gRPC server running on port 50051 with 50MB message limit...")
     try:
         while True:
             time.sleep(86400)
