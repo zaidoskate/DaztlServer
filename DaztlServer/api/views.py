@@ -2,6 +2,8 @@ from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser
@@ -14,11 +16,10 @@ from .models import (
 from .serializers import (
     RegisterSerializer, UserSerializer, ProfileUpdateSerializer, ArtistProfileUpdateSerializer,
     SongSerializer, AlbumSerializer, ArtistProfileSerializer,
-    PlaylistSerializer, SongUploadSerializer, AlbumUploadSerializer,
-    LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer, ProfilePictureUploadSerializer
+    PlaylistSerializer, SongUploadSerializer,
+    LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer, ProfilePictureUploadSerializer, NotificationSerializer
 )
 
-NotificationSerializer = None
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -112,6 +113,8 @@ class SongListView(generics.ListAPIView):
         q = self.request.query_params.get('q','')
         return Song.objects.filter(title__icontains=q)
 
+
+
 class AlbumListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = AlbumSerializer
@@ -192,9 +195,33 @@ class SongUploadView(generics.CreateAPIView):
 
 class AlbumUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = AlbumUploadSerializer
-    def get_serializer_context(self):
-        return {'request': self.request}
+    serializer_class = AlbumSerializer
+    def perform_create(self, ser):
+        artist_profile = self.request.user.artistprofile
+        ser.save(artist=artist_profile)
+
+class AddSongToAlbum(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        song_id = request.data.get("song_id")
+        try:
+            album = Album.objects.get(pk=pk, artist__user=request.user)
+            song = Song.objects.get(pk=song_id)
+
+            if album.songs.filter(pk=song_id).exists():
+                return Response(
+                    {"status": "info", "message": "La canción ya estaba en el álbum"},
+                    status=status.HTTP_200_OK
+                )
+
+            album.songs.add(song)
+            return Response({"status": "success", "message": "Canción agregada correctamente"}, status=200)
+        except album.DoesNotExist:
+            return Response({"status": "error", "message": "album no encontrada"}, status=404)
+        except Song.DoesNotExist:
+            return Response({"status": "error", "message": "Canción no encontrada"}, status=404)
+
 
 class ArtistReportView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -529,3 +556,55 @@ class GlobalSearchView(APIView):
             'artists': artists_data,
             'playlists': playlists_data
         })
+    
+class NotificationListView(generics.ListAPIView):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Solo mostrar notificaciones del usuario actual
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+
+class NotificationCreateView(generics.CreateAPIView):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        notification = serializer.save(user=self.request.user)
+        if notification.is_broadcast:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                "broadcast_group",
+                {
+                    "type": "send.notification",
+                    "content": {
+                        "type": "notification",
+                        "id": str(notification.id),
+                        "message": notification.message
+                    }
+                }
+            )
+
+class NotificationMarkAsSeenView(generics.UpdateAPIView):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['patch']  # Solo permitir PATCH
+
+    def get_queryset(self):
+        # Solo permitir actualizar notificaciones del usuario actual
+        return Notification.objects.filter(user=self.request.user)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.seen = True
+        instance.save()
+        return Response(self.get_serializer(instance).data)
+
+class UnseenNotificationCountView(generics.GenericAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        count = Notification.objects.filter(user=request.user, seen=False).count()
+        return Response({'unseen_count': count})

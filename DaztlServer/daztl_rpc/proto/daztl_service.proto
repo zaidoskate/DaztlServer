@@ -42,6 +42,12 @@ service MusicService {
     rpc GetArtistProfile (Empty) returns (ArtistProfileResponse);
     rpc RefreshToken (RefreshTokenRequest) returns (LoginResponse);
     rpc GlobalSearch(SearchRequest) returns (GlobalSearchResponse);
+
+
+    rpc ListNotifications (Empty) returns (NotificationListResponse);
+    rpc GetUnseenNotificationCount (Empty) returns (UnseenCountResponse);
+    rpc MarkNotificationAsSeen (MarkAsSeenRequest) returns (GenericResponse);
+    rpc CreateNotification (Notification) returns (GenericResponse);
 }
 
 message Empty {}
@@ -312,4 +318,24 @@ message ArtistReportResponse {
     string report_type = 3;
     int32 total_count = 4;
     repeated ReportItem data = 5;
+}
+message Notification {
+    int32 id = 1;
+    string message = 2;
+    string notification_type = 3;
+    bool seen = 4;
+    string created_at = 5;
+}
+
+message NotificationListResponse {
+    repeated Notification notifications = 1;
+}
+
+message UnseenCountResponse {
+    int32 count = 1;
+}
+
+message MarkAsSeenRequest {
+    string token = 1;
+    int32 notification_id = 2;
 }
