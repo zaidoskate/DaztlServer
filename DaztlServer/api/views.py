@@ -17,11 +17,12 @@ from .models import (
     Playlist, Notification, Like, LiveChat
 )
 from .serializers import (
-    RegisterSerializer, UserSerializer, ProfileUpdateSerializer, ArtistProfileUpdateSerializer,
+    ChatMessageSerializer, RegisterSerializer, UserSerializer, ProfileUpdateSerializer, ArtistProfileUpdateSerializer,
     SongSerializer, AlbumSerializer, ArtistProfileSerializer,
     PlaylistSerializer, SongUploadSerializer,
     LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer, ProfilePictureUploadSerializer, NotificationSerializer
 )
+from .consumers import connected_clients, connected_clients_chat
 
 
 class RegisterView(generics.CreateAPIView):
@@ -637,20 +638,34 @@ class NotificationCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         notification = serializer.save(user=self.request.user)
+        payload = {
+            "id" : notification.id,
+            "type": "notification",
+            "message": notification.message,
+            "created_at": notification.created_at.isoformat() 
+        }
         if notification.is_broadcast:
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "broadcast_group",
-                {
-                    "type": "send.notification",
-                    "content": {
-                        "type": "notification",
-                        "id": str(notification.id),
-                        "message": notification.message
-                    }
-                }
-            )
+            for client in list(connected_clients):
+                async_to_sync(client.send_personal)(payload)
 
+class ChatSendView(generics.CreateAPIView):
+    serializer_class = ChatMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        message_data = serializer.validated_data
+        
+        payload = {
+            "type": "chat_message",
+            "username": self.request.user.username,
+            "message": message_data['message']
+        }
+        
+        for client in list(connected_clients_chat):
+            async_to_sync(client.send_personal)(payload)
+        
+        return None
+    
 class NotificationMarkAsSeenView(generics.UpdateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer

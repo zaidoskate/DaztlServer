@@ -56,4 +56,5 @@ urlpatterns = [
     path('notifications/create/', views.NotificationCreateView.as_view(), name='notification-create'),
     path('notifications/<int:pk>/mark-seen/', views.NotificationMarkAsSeenView.as_view(), name='notification-mark-seen'),
     path('notifications/unseen-count/', views.UnseenNotificationCountView.as_view(), name='unseen-notification-count'),
+    path('songs/<int:song_id>/chat/send/', views.LiveChatCreateView.as_view())
 ]

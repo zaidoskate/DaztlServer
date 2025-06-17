@@ -45,6 +45,8 @@ service MusicService {
     rpc GlobalSearch(SearchRequest) returns (GlobalSearchResponse);
 
 
+    rpc SendMessageChat (MessageRequest) returns (Empty) ;
+
     rpc ListNotifications (Empty) returns (NotificationListResponse);
     rpc GetUnseenNotificationCount (Empty) returns (UnseenCountResponse);
     rpc MarkNotificationAsSeen (MarkAsSeenRequest) returns (GenericResponse);
@@ -61,6 +63,11 @@ message RegisterRequest {
     string last_name = 5;
 }
 
+message MessageRequest{
+    string token = 1;
+    string username = 2;
+    string message = 3;
+}
 message RegisterArtistRequest {
     string username = 1;
     string email = 2;

@@ -1357,6 +1357,62 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 message=f"Internal error: {str(e)}"
             )
             
+    def SendMessageChat(self, request, context):
+        try:
+            if not request.token:
+                context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+                context.set_details("Token is required")
+                return daztl_service_pb2.Empty()
+            
+            headers = make_auth_header(request.token)
+            
+            if not request.message:
+                context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+                context.set_details("Message cannot be empty")
+                return daztl_service_pb2.Empty()
+            
+            payload = {
+                "message": request.message,
+                "username": request.username  # El username viene en la request gRPC
+            }
+            
+            response = requests.post(
+                f"{API_BASE_URL}/chat/send/",  # Asumiendo que esta es la URL de tu vista
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+            
+            if response.status_code == 201:
+                return daztl_service_pb2.Empty()  # Operación exitosa, devolver mensaje vacío
+            elif response.status_code == 401:
+                context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+                context.set_details("Invalid or expired token")
+                return daztl_service_pb2.Empty()
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details(f"Failed to send message: {response.text}")
+                return daztl_service_pb2.Empty()
+                
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.Empty()
+            
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.Empty()
+            
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.Empty()
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Unexpected error: {str(e)}")
+            return daztl_service_pb2.Empty()
     def UploadAlbum(self, request, context):
         try:
             headers = make_auth_header(request.token)
