@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import FormParser
 from django.db import IntegrityError
 from .models import (
     User, ArtistProfile, Song, Album,
@@ -135,6 +136,26 @@ class PlaylistCreateView(generics.CreateAPIView):
     serializer_class = PlaylistSerializer
     def perform_create(self, ser): ser.save(user=self.request.user)
 
+class PlaylistUploadCoverView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk):
+        try:
+            playlist = Playlist.objects.get(pk=pk, user=request.user)
+        except Playlist.DoesNotExist:
+            return Response({"error": "Playlist no encontrada o no tienes permisos."}, status=status.HTTP_404_NOT_FOUND)
+
+        file_obj = request.FILES.get('cover')
+
+        if not file_obj:
+            return Response({"error": "No se proporcionó ninguna imagen."}, status=status.HTTP_400_BAD_REQUEST)
+
+        playlist.cover = file_obj
+        playlist.save()
+
+        return Response({"message": "Cover subido exitosamente."}, status=status.HTTP_200_OK)
+
 class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PlaylistSerializer
@@ -162,8 +183,6 @@ class PlaylistListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
-    
-
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SongUploadSerializer
@@ -299,25 +318,23 @@ from rest_framework.decorators import api_view
 from .models import Like, ArtistProfile
 
 # --- CU-13: Like/Unlike artista ---
-@api_view(['POST'])
+@api_view(['POST', 'DELETE'])
 def like_artist(request, artist_id):
     try:
         artist = ArtistProfile.objects.get(id=artist_id)
     except ArtistProfile.DoesNotExist:
         return Response({"error": "Artista no encontrado"}, status=status.HTTP_404_NOT_FOUND)
     
-    Like.objects.get_or_create(user=request.user, artist=artist)
-    return Response({"status": "Like agregado"}, status=status.HTTP_201_CREATED)
-
-@api_view(['DELETE'])
-def unlike_artist(request, artist_id):
-    try:
-        like = Like.objects.get(user=request.user, artist_id=artist_id)
-    except Like.DoesNotExist:
-        return Response({"error": "Like no encontrado"}, status=status.HTTP_404_NOT_FOUND)
-    
-    like.delete()
-    return Response({"status": "Like eliminado"}, status=status.HTTP_200_OK)
+    if request.method == 'POST':
+        Like.objects.get_or_create(user=request.user, artist=artist)
+        return Response({"status": "Like agregado"}, status=status.HTTP_201_CREATED)
+    elif request.method == 'DELETE':
+        try:
+            like = Like.objects.get(user=request.user, artist=artist)
+            like.delete()
+            return Response({"status": "Like eliminado"}, status=status.HTTP_200_OK)
+        except Like.DoesNotExist:
+            return Response({"error": "Like no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
 def is_liked(request, artist_id):

@@ -75,7 +75,7 @@ class ArtistProfileUpdateSerializer(serializers.ModelSerializer):
 # — CU-03: Buscar contenido
 class SongSerializer(serializers.ModelSerializer):
     artist_name = serializers.CharField(source='artist.user.username', read_only=True)
-    audio_url = serializers.ImageField(source='audio_file', read_only=True)
+    audio_url = serializers.FileField(source='audio_file', read_only=True)
     cover_url = serializers.ImageField(source='cover_image', read_only=True)
     class Meta:
         model = Song
