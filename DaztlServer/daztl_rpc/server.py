@@ -474,10 +474,12 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     release_date=s["release_date"]
                 ) for s in data["songs"]
             ]
+            cover_url = data.get("cover")
             return daztl_service_pb2.PlaylistResponse(
                 id=data["id"],
                 name=data["name"],
-                songs=songs
+                songs=songs,
+                cover_url=cover_url
             )
         except Exception as e:
             context.set_code(grpc.StatusCode.INTERNAL)
@@ -537,9 +539,11 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     name=data["name"],
                     songs=songs,
                     status="success",
-                    message="Playlist cargada correctamente"
+                    message="Playlist cargada correctamente",
+                    cover_url=data.get("cover")
                 )
             else:
+                print(response.text)
                 return daztl_service_pb2.PlaylistDetailResponse(
                     status="error",
                     message=f"Error al obtener playlist: {response.text}"
