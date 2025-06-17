@@ -310,6 +310,141 @@ class ProfilePictureUploadGRPCView(APIView):
                 'image_url': request.build_absolute_uri(user.profile_picture.url)
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AdminReportsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, report_type):
+        if request.user.role != 'admin':
+            return Response({
+                'error': 'Solo los administradores pueden acceder a los reportes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            if report_type == 'users':
+                return self.get_users_report()
+            elif report_type == 'artists':
+                return self.get_artists_report()
+            elif report_type == 'listeners':
+                return self.get_listeners_report()
+            elif report_type == 'songs':
+                return self.get_songs_report()
+            elif report_type == 'albums':
+                return self.get_albums_report()
+            else:
+                return Response({
+                    'error': 'Tipo de reporte no válido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def get_users_report(self):
+        users = User.objects.all().values(
+            'id', 'username', 'email', 'first_name', 'last_name', 
+            'role', 'date_joined', 
+        )
+        return Response({
+            'report_type': 'users',
+            'total_count': users.count(),
+            'data': list(users)
+        })
+    
+    def get_artists_report(self):
+        artists = User.objects.filter(role='artist').values(
+            'id', 'username', 'email', 
+            'first_name', 'last_name', 'date_joined', 
+        )
+        return Response({
+            'report_type': 'artists',
+            'total_count': artists.count(),
+            'data': list(artists)
+        })
+    
+    def get_listeners_report(self):
+        listeners = User.objects.filter(role='listener').values(
+            'id', 'username', 'email', 
+            'first_name', 'last_name', 'date_joined',
+        )
+        return Response({
+            'report_type': 'listeners',
+            'total_count': listeners.count(),
+            'data': list(listeners)
+        })
+    
+    def get_songs_report(self):
+        songs = Song.objects.all().values('id', 'title', 'release_date')
+        return Response({
+            'report_type': 'songs',
+            'total_count': songs.count(),
+            'data': list(songs)
+        })
+    
+    def get_albums_report(self):
+        albums = Album.objects.all().values('id', 'title')
+        return Response({
+            'report_type': 'albums',
+            'total_count': albums.count(),
+            'data': list(albums)
+        })
+        
+class ArtistReportsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, report_type):
+        user = request.user
+        
+        if user.role != 'artist':
+            return Response({
+                'error': 'Solo los artistas pueden acceder a estos reportes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        if not hasattr(user, 'artistprofile'):
+            return Response({
+                'error': 'Perfil de artista no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            artist_profile = user.artistprofile
+            
+            if report_type == 'songs':
+                return self.get_artist_songs_report(artist_profile)
+            elif report_type == 'albums':
+                return self.get_artist_albums_report(artist_profile)
+            else:
+                return Response({
+                    'error': 'Tipo de reporte no válido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def get_artist_songs_report(self, artist_profile):
+        songs = Song.objects.filter(artist=artist_profile).values(
+            'id', 'title', 'release_date'
+        )
+        
+        return Response({
+            'report_type': 'artist_songs',
+            'total_count': songs.count(),
+            'data': list(songs)
+        })
+    
+    def get_artist_albums_report(self, artist_profile):
+        albums = Album.objects.filter(artist=artist_profile).values(
+            'id', 'title'
+        )
+        
+        return Response({
+            'report_type': 'artist_albums',
+            'total_count': albums.count(),
+            'data': list(albums)
+        })
+
 
 from django.http import Http404
 from rest_framework import status

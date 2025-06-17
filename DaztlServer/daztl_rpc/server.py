@@ -922,6 +922,99 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.LikeStatusResponse()
 
+    def GetAdminReport(self, request, context):
+        headers = make_auth_header(request.token)
+        
+        try:
+            res = requests.get(f"{API_BASE_URL}/admin/reports/{request.report_type}/", 
+                            headers=headers, 
+                            timeout=60)
+            
+            if res.status_code == 200:
+                data = res.json()
+                
+                report_items = []
+                for item in data.get('data', []):
+                    report_item = daztl_service_pb2.ReportItem(
+                        id=item.get('id', 0),
+                        username=item.get('username', ''),
+                        email=item.get('email', ''),
+                        first_name=item.get('first_name', ''),
+                        last_name=item.get('last_name', ''),
+                        role=item.get('role', ''),
+                        date_joined=str(item.get('date_joined', '')),
+                        title=item.get('title', ''),
+                        release_date=str(item.get('release_date', '')),
+                    )
+                    report_items.append(report_item)
+                
+                return daztl_service_pb2.AdminReportResponse(
+                    status="success",
+                    message="Reporte generado exitosamente",
+                    report_type=data.get('report_type', ''),
+                    total_count=data.get('total_count', 0),
+                    data=report_items
+                )
+            else:
+                return daztl_service_pb2.AdminReportResponse(
+                    status="error",
+                    message=res.text
+                )
+                
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.AdminReportResponse()
+            
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Error: {str(e)}")
+            return daztl_service_pb2.AdminReportResponse()
+        
+    def GetArtistReport(self, request, context):
+        headers = make_auth_header(request.token)
+        
+        try:
+            res = requests.get(f"{API_BASE_URL}/artist/reports/{request.report_type}/", 
+                            headers=headers, 
+                            timeout=60)
+            
+            if res.status_code == 200:
+                data = res.json()
+                
+                report_items = []
+                for item in data.get('data', []):
+                    report_item = daztl_service_pb2.ReportItem(
+                        id=item.get('id', 0),
+                        title=item.get('title', ''),
+                        release_date=str(item.get('release_date', '')),
+                    )
+                    report_items.append(report_item)
+                
+                return daztl_service_pb2.ArtistReportResponse(
+                    status="success",
+                    message="Reporte de artista generado exitosamente",
+                    report_type=data.get('report_type', ''),
+                    total_count=data.get('total_count', 0),
+                    data=report_items
+                )
+            else:
+                return daztl_service_pb2.ArtistReportResponse(
+                    status="error",
+                    message=res.text
+                )
+                
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.ArtistReportResponse()
+            
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Error: {str(e)}")
+            return daztl_service_pb2.ArtistReportResponse()
+
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     daztl_service_pb2_grpc.add_MusicServiceServicer_to_server(MusicServiceServicer(), server)

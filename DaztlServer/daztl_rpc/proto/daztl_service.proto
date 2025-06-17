@@ -29,6 +29,8 @@ service MusicService {
 
     rpc ArtistReport (Empty) returns (ReportResponse);
     rpc SystemReport (Empty) returns (ReportResponse);
+    rpc GetAdminReport(AdminReportRequest) returns (AdminReportResponse);
+    rpc GetArtistReport(ArtistReportRequest) returns (ArtistReportResponse);
 
     rpc ListChatMessages (ChatMessageRequest) returns (ChatListResponse);
     rpc SendChatMessage (SendChatRequest) returns (GenericResponse);
@@ -274,3 +276,40 @@ message GenericResponse {
     string message = 2;
 }
 
+message AdminReportRequest {
+    string token = 1;
+    string report_type = 2;
+}
+
+message AdminReportResponse {
+    string status = 1;
+    string message = 2;
+    string report_type = 3;
+    int32 total_count = 4;
+    repeated ReportItem data = 5;
+}
+
+message ReportItem {
+    int32 id = 1;
+    string username = 2;
+    string email = 3;
+    string first_name = 4;
+    string last_name = 5;
+    string role = 6;
+    string date_joined = 7;
+    string title = 8;
+    string release_date = 9;
+}
+
+message ArtistReportRequest {
+    string token = 1;
+    string report_type = 2; 
+}
+
+message ArtistReportResponse {
+    string status = 1;
+    string message = 2;
+    string report_type = 3;
+    int32 total_count = 4;
+    repeated ReportItem data = 5;
+}

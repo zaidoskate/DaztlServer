@@ -129,6 +129,16 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.ReportResponse.FromString,
                 _registered_method=True)
+        self.GetAdminReport = channel.unary_unary(
+                '/daztl.MusicService/GetAdminReport',
+                request_serializer=proto_dot_daztl__service__pb2.AdminReportRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.AdminReportResponse.FromString,
+                _registered_method=True)
+        self.GetArtistReport = channel.unary_unary(
+                '/daztl.MusicService/GetArtistReport',
+                request_serializer=proto_dot_daztl__service__pb2.ArtistReportRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.ArtistReportResponse.FromString,
+                _registered_method=True)
         self.ListChatMessages = channel.unary_unary(
                 '/daztl.MusicService/ListChatMessages',
                 request_serializer=proto_dot_daztl__service__pb2.ChatMessageRequest.SerializeToString,
@@ -293,6 +303,18 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetAdminReport(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetArtistReport(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ListChatMessages(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -444,6 +466,16 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.SystemReport,
                     request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.ReportResponse.SerializeToString,
+            ),
+            'GetAdminReport': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAdminReport,
+                    request_deserializer=proto_dot_daztl__service__pb2.AdminReportRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.AdminReportResponse.SerializeToString,
+            ),
+            'GetArtistReport': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetArtistReport,
+                    request_deserializer=proto_dot_daztl__service__pb2.ArtistReportRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.ArtistReportResponse.SerializeToString,
             ),
             'ListChatMessages': grpc.unary_unary_rpc_method_handler(
                     servicer.ListChatMessages,
@@ -1004,6 +1036,60 @@ class MusicService(object):
             '/daztl.MusicService/SystemReport',
             proto_dot_daztl__service__pb2.Empty.SerializeToString,
             proto_dot_daztl__service__pb2.ReportResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetAdminReport(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetAdminReport',
+            proto_dot_daztl__service__pb2.AdminReportRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.AdminReportResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetArtistReport(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetArtistReport',
+            proto_dot_daztl__service__pb2.ArtistReportRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.ArtistReportResponse.FromString,
             options,
             channel_credentials,
             insecure,

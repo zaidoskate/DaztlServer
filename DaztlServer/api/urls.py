@@ -35,6 +35,8 @@ urlpatterns = [
     # CU-10/11 Reportes
     path('reports/artist/', views.ArtistReportView.as_view()),
     path('reports/system/', views.SystemReportView.as_view()),
+    path('admin/reports/<str:report_type>/', views.AdminReportsView.as_view(), name='admin-reports'),
+    path('artist/reports/<str:report_type>/', views.ArtistReportsView.as_view(), name='artist-reports'),
 
     # CU-12 Chat en vivo
     path('songs/<int:song_id>/chat/', views.LiveChatListView.as_view()),
