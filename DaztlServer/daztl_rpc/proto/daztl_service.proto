@@ -134,6 +134,7 @@ message ArtistResponse {
 message CreatePlaylistRequest {
     string token = 1;
     string name = 2;
+    string cover_url = 3;
 }
 
 message PlaylistIdRequest {

@@ -3,6 +3,7 @@ from concurrent import futures
 import time
 import requests
 import json
+import base64
 import proto.daztl_service_pb2 as daztl_service_pb2
 import proto.daztl_service_pb2_grpc as daztl_service_pb2_grpc
 
@@ -298,34 +299,69 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             if res.status_code == 201:
                 data = res.json()
                 playlist_id = data.get("id", -1)
+
+                if request.cover_url:
+                    image_data = base64.b64decode(request.cover_url)
+                    files = {'cover': ('cover.jpg', image_data, 'image/jpeg')}
+                    res_upload = requests.post(
+                        f"{API_BASE_URL}/playlists/{playlist_id}/upload_cover/",
+                        headers=headers,
+                        files=files,
+                        timeout=60
+                    )
+                    if res_upload.status_code != 200:
+                        return daztl_service_pb2.GenericResponse(
+                            status="error",
+                            message=f"Playlist creada pero fallo al subir imagen: {res_upload.text}"
+                        )
+
                 message = json.dumps({"id": playlist_id, "message": "Playlist creada exitosamente"})
                 return daztl_service_pb2.GenericResponse(status="success", message=message)
+
             else:
                 return daztl_service_pb2.GenericResponse(status="error", message=res.text)
+
         except requests.exceptions.Timeout:
             context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
             context.set_details("Backend API timeout")
             return daztl_service_pb2.GenericResponse()
-            
+
         except requests.exceptions.ConnectionError:
             context.set_code(grpc.StatusCode.UNAVAILABLE)
             context.set_details("Backend API unreachable")
             return daztl_service_pb2.GenericResponse()
-            
+
         except requests.exceptions.RequestException as e:
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.GenericResponse()
+
         except Exception as e:
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.GenericResponse()
 
+
     def GetPlaylist(self, request, context):
         try:
-            response = requests.get(f"{API_BASE_URL}/playlists/{request.id}/", timeout=60)
+            # Obtener el token de los metadatos
+            token = self.get_token_from_metadata(context)
+            
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+            
+            response = requests.get(
+                f"{API_BASE_URL}/playlists/{request.id}/",
+                headers=headers,
+                timeout=60
+            )
+            
             if response.status_code != 200:
+                context.set_code(grpc.StatusCode.PERMISSION_DENIED if response.status_code == 401 
+                            else grpc.StatusCode.INTERNAL)
                 return daztl_service_pb2.PlaylistResponse(id=0, name="Error", songs=[])
+                
             data = response.json()
             songs = [
                 daztl_service_pb2.SongResponse(
@@ -343,6 +379,7 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 songs=songs
             )
         except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
             return daztl_service_pb2.PlaylistResponse(id=0, name=str(e), songs=[])
 
     def AddSongToPlaylist(self, request, context):
@@ -439,17 +476,32 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
 
                 for playlist in data:
                     cover_url = playlist.get("cover") or ""
+                    songs = []
+                    
+                    if 'songs' in playlist:
+                        for song in playlist['songs']:
+                            song_msg = daztl_service_pb2.SongResponse(
+                                id=song['id'],
+                                title=song['title'],
+                                artist=song['artist_name'],
+                                audio_url=song['audio_url'] or "",
+                                cover_url=song['cover_url'] or "",
+                                release_date=song['release_date'] or ""
+                            )
+                            songs.append(song_msg)
+                    
                     playlist_msg = daztl_service_pb2.PlaylistResponse(
                         id=playlist["id"],
                         name=playlist["name"],
                         cover_url=cover_url,
+                        songs=songs  # Añadir las canciones aquí
                     )
                     playlist_messages.append(playlist_msg)
 
                 return daztl_service_pb2.PlaylistListResponse(playlists=playlist_messages)
 
             else:
-                print (response)
+                print(response)
                 context.set_code(grpc.StatusCode.UNAUTHENTICATED)
                 context.set_details("No autorizado para obtener playlists")
                 return daztl_service_pb2.PlaylistListResponse()
@@ -473,7 +525,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.PlaylistListResponse()
-
     @staticmethod
     def get_token_from_metadata(context):
         for key, value in context.invocation_metadata():
@@ -666,6 +717,109 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.ArtistListResponse()
 
+    def LikeArtist(self, request, context):
+        try:
+            headers = make_auth_header(request.token)
+            artist_id = request.artist_id
+            
+            # Primero verificamos si ya existe el like
+            res = requests.get(
+                f"{API_BASE_URL}/artists/{artist_id}/like/status/",
+                headers=headers,
+                timeout=60
+            )
+            
+            if res.status_code == 200:
+                is_liked = res.json().get("liked", False)
+                
+                if is_liked:
+                    # Si ya está liked, hacemos unlike
+                    res = requests.delete(
+                        f"{API_BASE_URL}/artists/{artist_id}/like/",
+                        headers=headers,
+                        timeout=60
+                    )
+                else:
+                    # Si no está liked, hacemos like
+                    res = requests.post(
+                        f"{API_BASE_URL}/artists/{artist_id}/like/",
+                        headers=headers,
+                        timeout=60
+                    )
+                
+                if res.status_code in (200, 201):
+                    return daztl_service_pb2.GenericResponse(
+                        status="success",
+                        message="Like status updated successfully"
+                    )
+                else:
+                    context.set_code(grpc.StatusCode.INTERNAL)
+                    context.set_details(f"Error updating like: {res.text}")
+                    return daztl_service_pb2.GenericResponse()
+                    
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details("Failed to check like status")
+                return daztl_service_pb2.GenericResponse()
+                
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.GenericResponse()
+            
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.GenericResponse()
+            
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.GenericResponse()
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.GenericResponse()
+
+    def IsArtistLiked(self, request, context):
+        try:
+            headers = make_auth_header(request.token)
+            artist_id = request.artist_id
+            
+            res = requests.get(
+                f"{API_BASE_URL}/artists/{artist_id}/like/status/",
+                headers=headers,
+                timeout=60
+            )
+            
+            if res.status_code == 200:
+                is_liked = res.json().get("liked", False)
+                return daztl_service_pb2.LikeStatusResponse(is_liked=is_liked)
+            else:
+                context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details("Failed to get like status")
+                return daztl_service_pb2.LikeStatusResponse()
+                
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.LikeStatusResponse()
+            
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.LikeStatusResponse()
+            
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.LikeStatusResponse()
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.LikeStatusResponse()
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

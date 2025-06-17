@@ -20,6 +20,7 @@ urlpatterns = [
 
     # CU-05/06/07 Playlists
     path('playlists/create/', views.PlaylistCreateView.as_view()),
+    path('playlists/<int:pk>/upload_cover/', views.PlaylistUploadCoverView.as_view()),
     path('playlists/<int:pk>/', views.PlaylistDetailView.as_view()),
     path('playlists/<int:pk>/add_song/', views.AddSongToPlaylistView.as_view()),
     path('playlists/', views.PlaylistListView.as_view()),
@@ -38,8 +39,8 @@ urlpatterns = [
 
     #CU-13 Like/unlike artista
     path('artists/<int:artist_id>/like/', views.like_artist, name='like-artist'), #POST
-    #Refresh del token necesario para mantener la sesión en los clientes (editar perfil en Android)
     path('artists/<int:artist_id>/like/status/', views.is_liked, name='is-liked'), #GET
+    #Refresh del token necesario para mantener la sesión en los clientes (editar perfil en Android)
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     #Implementacion de busqueda generalizada para escritorio
     path('search/', views.GlobalSearchView.as_view(), name='global-search'),
