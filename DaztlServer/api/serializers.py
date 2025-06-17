@@ -140,4 +140,10 @@ class ProfilePictureUploadSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['id', 'user', 'message', 'seen', 'created_at']
+        fields = ['id', 'user', 'message', 'is_broadcast', 'seen', 'created_at']
+
+class ChatMessageSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=500)
+    
+    def create(self, validated_data):
+        return validated_data

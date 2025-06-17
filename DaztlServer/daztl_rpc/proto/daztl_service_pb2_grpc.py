@@ -184,6 +184,11 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.SearchRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GlobalSearchResponse.FromString,
                 _registered_method=True)
+        self.SendMessageChat = channel.unary_unary(
+                '/daztl.MusicService/SendMessageChat',
+                request_serializer=proto_dot_daztl__service__pb2.MessageRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
+                _registered_method=True)
         self.ListNotifications = channel.unary_unary(
                 '/daztl.MusicService/ListNotifications',
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
@@ -389,6 +394,12 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendMessageChat(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ListNotifications(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -565,6 +576,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.GlobalSearch,
                     request_deserializer=proto_dot_daztl__service__pb2.SearchRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GlobalSearchResponse.SerializeToString,
+            ),
+            'SendMessageChat': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendMessageChat,
+                    request_deserializer=proto_dot_daztl__service__pb2.MessageRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
             ),
             'ListNotifications': grpc.unary_unary_rpc_method_handler(
                     servicer.ListNotifications,
@@ -1397,6 +1413,33 @@ class MusicService(object):
             '/daztl.MusicService/GlobalSearch',
             proto_dot_daztl__service__pb2.SearchRequest.SerializeToString,
             proto_dot_daztl__service__pb2.GlobalSearchResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendMessageChat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/SendMessageChat',
+            proto_dot_daztl__service__pb2.MessageRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,

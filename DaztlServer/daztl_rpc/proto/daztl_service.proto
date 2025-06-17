@@ -44,6 +44,8 @@ service MusicService {
     rpc GlobalSearch(SearchRequest) returns (GlobalSearchResponse);
 
 
+    rpc SendMessageChat (MessageRequest) returns (Empty) ;
+
     rpc ListNotifications (Empty) returns (NotificationListResponse);
     rpc GetUnseenNotificationCount (Empty) returns (UnseenCountResponse);
     rpc MarkNotificationAsSeen (MarkAsSeenRequest) returns (GenericResponse);
@@ -60,6 +62,11 @@ message RegisterRequest {
     string last_name = 5;
 }
 
+message MessageRequest{
+    string token = 1;
+    string username = 2;
+    string message = 3;
+}
 message RegisterArtistRequest {
     string username = 1;
     string email = 2;
@@ -212,11 +219,20 @@ message UploadSongRequest {
     string title = 2;
     bytes audio_file = 3;  
     bytes cover_image = 4;
+    string release_date = 5;
 }
 
 message UploadAlbumRequest {
     string token = 1;
     string title = 2;
+    bytes cover_image = 3;
+    repeated AlbumSong songs = 4;
+}
+
+message AlbumSong {
+    string title = 1;        
+    bytes audio_file = 2;     
+    string filename = 3;      
 }
 
 message ReportResponse {
