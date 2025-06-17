@@ -200,9 +200,9 @@ class PlaylistListView(generics.ListAPIView):
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SongUploadSerializer
-    def perform_create(self, ser):
+    def perform_create(self, serializer):
         artist_profile = self.request.user.artistprofile
-        ser.save(artist=artist_profile)
+        serializer.save(artist=artist_profile)
 
 class AlbumUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]

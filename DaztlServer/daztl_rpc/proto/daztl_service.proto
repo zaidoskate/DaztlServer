@@ -227,6 +227,7 @@ message UploadSongRequest {
     string title = 2;
     bytes audio_file = 3;  
     bytes cover_image = 4;
+    string release_date = 5;
 }
 
 message UploadAlbumRequest {

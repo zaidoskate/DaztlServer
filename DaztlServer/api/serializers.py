@@ -108,7 +108,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
 class SongUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ['title','audio_file', 'cover_image']
+        fields = ['title','audio_file', 'cover_image', 'release_date', 'artist_id']
 
 # — CU-10/11: Reportes
 class ArtistReportSerializer(serializers.Serializer):

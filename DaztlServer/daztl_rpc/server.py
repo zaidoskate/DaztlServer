@@ -8,6 +8,8 @@ import json
 import base64
 import proto.daztl_service_pb2 as daztl_service_pb2
 import proto.daztl_service_pb2_grpc as daztl_service_pb2_grpc
+import datetime
+import io
 
 API_BASE_URL = "http://localhost:8000/api"
 
@@ -1228,14 +1230,15 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_details(f"Unexpected error: {str(e)}")
             return daztl_service_pb2.GenericResponse()
     
+    # Reemplazo para el método UploadSong en server.py
     def UploadSong(self, request, context):
         try:
-            # 1. Autenticación y verificación de artista
+            # 1. Verificar autenticación
             headers = make_auth_header(request.token)
             auth_check = requests.get(
                 f"{API_BASE_URL}/profile/",
                 headers=headers,
-                timeout=10
+                timeout=60
             )
             
             if auth_check.status_code != 200:
@@ -1247,101 +1250,113 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 )
                 
             user_data = auth_check.json()
-          
-            # 2. Preparación del payload multipart
-            timestamp = int(time.time())
-            boundary = '----WebKitFormBoundary' + ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-            body = io.BytesIO()
             
-            def add_form_field(field_name, value, filename=None, content_type=None):
-                body.write(f'--{boundary}\r\n'.encode())
-                body.write(f'Content-Disposition: form-data; name="{field_name}"'.encode())
-                if filename:
-                    body.write(f'; filename="{filename}"'.encode())
-                body.write(b'\r\n')
-                if content_type:
-                    body.write(f'Content-Type: {content_type}\r\n'.encode())
-                body.write(b'\r\n')
-                if isinstance(value, bytes):
-                    body.write(value)
-                else:
-                    body.write(str(value).encode())
-                body.write(b'\r\n')
+            # 2. Verificar que es artista
+            if not hasattr(user_data, 'artist_profile_id') and 'artist_profile_id' not in user_data:
+                artist_check = requests.get(
+                    f"{API_BASE_URL}/artist/profile/",
+                    headers=headers,
+                    timeout=60
+                )
+                if artist_check.status_code != 200:
+                    context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+                    context.set_details("Usuario no es artista")
+                    return daztl_service_pb2.GenericResponse(
+                        status="error",
+                        message="User is not an artist"
+                    )
+                user_data = artist_check.json()
             
-            # Campos del formulario
-            add_form_field('title', request.title)
-            add_form_field('artist', str(user_data.get('artist_profile_id')))
-            add_form_field('release_date', request.release_date if request.release_date else datetime.now().date().isoformat())
-            add_form_field('genre', request.genre if request.genre else '')
+            # 3. Preparar archivos usando el mismo enfoque que perfil
+            files = {}
+            data = {
+                'title': request.title,
+            }
             
-            # Archivo de audio
-            audio_filename = f"song_{timestamp}_{request.title.replace(' ', '_')}.mp3"
-            add_form_field('audio_file', request.audio_file, 
-                        filename=audio_filename, 
-                        content_type='audio/mpeg')
+            # Agregar fecha de lanzamiento si existe
+            if request.release_date:
+                data['release_date'] = request.release_date
+            else:
+                data['release_date'] = datetime.now().date().isoformat()
             
-            # Imagen de portada (si existe)
+            # Archivo de audio (obligatorio)
+            if request.audio_file:
+                files['audio_file'] = (
+                    f'audio_{int(time.time())}.mp3',
+                    request.audio_file,
+                    'audio/mpeg'
+                )
+            else:
+                return daztl_service_pb2.GenericResponse(
+                    status="error",
+                    message="Audio file is required"
+                )
+            
+            # Imagen de portada (opcional)
             if request.cover_image:
-                cover_filename = f"cover_{timestamp}_{request.title.replace(' ', '_')}.jpg"
-                add_form_field('cover_image', request.cover_image,
-                            filename=cover_filename,
-                            content_type='image/jpeg')
+                files['cover_image'] = (
+                    f'cover_{int(time.time())}.jpg',
+                    request.cover_image,
+                    'image/jpeg'
+                )
             
-            body.write(f'--{boundary}--\r\n'.encode())
-            
-            # 3. Envío a la API
-            headers = make_auth_header(request.token)
-            headers['Content-Type'] = f'multipart/form-data; boundary={boundary}'
-            
+            # 4. Enviar al API Django
             response = requests.post(
                 f"{API_BASE_URL}/songs/upload/",
                 headers=headers,
-                data=body.getvalue(),
-                timeout=60
+                data=data,
+                files=files,
+                timeout=120  # Más tiempo para archivos grandes
             )
             
             if response.status_code == 201:
                 song_data = response.json()
                 
-                # Crear notificación
+                # 5. Crear notificación
                 try:
+                    notification_payload = {
+                        'message': f"Nueva canción subida: {request.title}",
+                        'notification_type': 'new_song',
+                        'seen': False
+                    }
                     requests.post(
                         f"{API_BASE_URL}/notifications/create/",
                         headers=headers,
-                        json={
-                            'message': f"Nueva canción: {request.title}",
-                            'artist_id': user_data['artist_profile_id'],
-                            'song_id': song_data['id'],
-                            'is_broadcast': True
-                        },
+                        json=notification_payload,
                         timeout=10
                     )
-                except requests.exceptions.RequestException:
-                    pass
+                except:
+                    pass  
                 
                 return daztl_service_pb2.GenericResponse(
                     status="success",
-                    message="Song uploaded successfully",
+                    message=f"Song uploaded successfully. ID: {song_data.get('id', 'N/A')}"
                 )
             else:
+                error_msg = response.text if response.text else "Unknown error"
                 context.set_code(grpc.StatusCode.INTERNAL)
+                context.set_details(f"Upload failed: {error_msg}")
                 return daztl_service_pb2.GenericResponse(
                     status="error",
-                    message=f"API Error: {response.text[:200]}"
+                    message=f"Upload failed: {error_msg}"
                 )
-
+                
         except requests.exceptions.ConnectionError:
             context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
             return daztl_service_pb2.GenericResponse(
                 status="error",
                 message="Backend API unreachable"
             )
         except Exception as e:
             context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Internal error: {str(e)}")
             return daztl_service_pb2.GenericResponse(
                 status="error",
                 message=f"Internal error: {str(e)}"
             )
+
+
             
         
 def serve():
