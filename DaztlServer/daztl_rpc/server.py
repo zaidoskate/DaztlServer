@@ -158,6 +158,75 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.GenericResponse()
 
+    def UpdateArtistProfile(self, request, context):
+        headers = make_auth_header(request.token)
+        payload = {}
+        if request.username:
+            payload["username"] = request.username
+        if request.password:
+            payload["password"] = request.password
+        if request.bio:
+            payload["bio"] = request.bio
+        try:
+            res = requests.put(f"{API_BASE_URL}/artist/update/", headers=headers, json=payload, timeout=60)
+            if res.status_code == 200:
+                return daztl_service_pb2.GenericResponse(status="success", message="Artist profile updated successfully")
+            else:
+                return daztl_service_pb2.GenericResponse(status="error", message=res.text)
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.GenericResponse()
+            
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.GenericResponse()
+            
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.GenericResponse()
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.GenericResponse()
+        
+    def UploadProfileImage(self, request, context):
+        headers = make_auth_header(request.token)
+        
+        import base64
+        image_base64 = base64.b64encode(request.image_data).decode('utf-8')
+        
+        payload = {
+            "image_data": image_base64,
+            "filename": request.filename
+        }
+        
+        try:
+            res = requests.post(f"{API_BASE_URL}/upload-profile-image-grpc/", 
+                            headers=headers, 
+                            json=payload, 
+                            timeout=60)
+            
+            if res.status_code == 200:
+                response_data = res.json()
+                return daztl_service_pb2.UploadProfileImageResponse(
+                    status="success",
+                    message=response_data.get('message', 'Imagen subida'),
+                    image_url=response_data.get('image_url', '')
+                )
+            else:
+                return daztl_service_pb2.UploadProfileImageResponse(
+                    status="error",
+                    message=res.text
+                )
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Error: {str(e)}")
+            return daztl_service_pb2.UploadProfileImageResponse()
+
+
     def ListSongs(self, request, context):
         try:
             res = requests.get(f"{API_BASE_URL}/songs/", timeout=60)

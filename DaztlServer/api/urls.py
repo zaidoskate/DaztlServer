@@ -7,9 +7,11 @@ urlpatterns = [
     # CU-01 / CU-02
     path('register/', views.RegisterView.as_view(), name='register'),
     path('profile/edit', views.ProfileUpdateView.as_view(), name='profile-update'),
+    path('artist/update/', views.ArtistProfileUpdateView.as_view(), name='artist-update'),
     path('profile/', views.ProfileView.as_view(), name='profile'),
     path('artist/profile/', views.ArtistProfileView.as_view(), name='artist-profile'),
     path('profile/upload_picture/', views.ProfilePictureUploadView.as_view()),
+    path('upload-profile-image-grpc/', views.ProfilePictureUploadGRPCView.as_view(), name='upload-profile-image-grpc'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
     path('auth/register-artist/', views.RegisterArtistView.as_view(), name='register-artist'),
 

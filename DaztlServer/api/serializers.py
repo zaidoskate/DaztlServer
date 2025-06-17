@@ -41,6 +41,31 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class ArtistProfileUpdateSerializer(serializers.ModelSerializer):
+    bio = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    username = serializers.CharField(required=False, allow_blank=False)
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'bio']
+    
+    def update(self, instance, validated_data):
+        bio = validated_data.pop('bio', None)
+        
+        for attr, value in validated_data.items():
+            if attr == 'password' and value:
+                if value and value.strip():
+                    instance.set_password(value)
+            elif attr != 'password':
+                setattr(instance, attr, value)
+        instance.save()
+        
+        if bio is not None and hasattr(instance, 'artistprofile'):
+            instance.artistprofile.bio = bio
+            instance.artistprofile.save()
+        
+        return instance
+
 
 # — CU-03: Buscar contenido
 class SongSerializer(serializers.ModelSerializer):

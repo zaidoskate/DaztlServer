@@ -8,8 +8,10 @@ option java_outer_classname = "DaztlServiceOuterClass";
 service MusicService {
     rpc RegisterUser (RegisterRequest) returns (GenericResponse);
     rpc UpdateProfile (UpdateProfileRequest) returns (GenericResponse);
+    rpc UpdateArtistProfile(UpdateArtistProfileRequest) returns (GenericResponse);
     rpc LoginUser (LoginRequest) returns (LoginResponse);
     rpc RegisterArtist(RegisterArtistRequest) returns (GenericResponse);
+    rpc UploadProfileImage(UploadProfileImageRequest) returns (UploadProfileImageResponse);
 
     rpc ListSongs (Empty) returns (SongListResponse);
     rpc GetSong (SongIdRequest) returns (SongResponse);
@@ -67,6 +69,26 @@ message UpdateProfileRequest {
     string username = 5;
     string password = 6;
 }
+
+message UpdateArtistProfileRequest {
+    string token = 1;
+    string username = 2;
+    string password = 3;
+    string bio = 4;
+}
+
+message UploadProfileImageRequest {
+    string token = 1;
+    bytes image_data = 2;
+    string filename = 3;
+}
+
+message UploadProfileImageResponse {
+    string status = 1;
+    string message = 2;
+    string image_url = 3;
+}
+
 
 message LoginRequest {
     string username = 1;

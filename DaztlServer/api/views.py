@@ -5,12 +5,13 @@ from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser
+from django.db import IntegrityError
 from .models import (
     User, ArtistProfile, Song, Album,
     Playlist, Notification, Like, LiveChat
 )
 from .serializers import (
-    RegisterSerializer, UserSerializer, ProfileUpdateSerializer,
+    RegisterSerializer, UserSerializer, ProfileUpdateSerializer, ArtistProfileUpdateSerializer,
     SongSerializer, AlbumSerializer, ArtistProfileSerializer,
     PlaylistSerializer, SongUploadSerializer, AlbumUploadSerializer,
     LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer, ProfilePictureUploadSerializer
@@ -24,12 +25,10 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     
 
-# Agrega esta nueva vista al final de tu views.py
 class RegisterArtistView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     
     def post(self, request, *args, **kwargs):
-        # Extraer datos del request
         username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
@@ -38,7 +37,6 @@ class RegisterArtistView(generics.CreateAPIView):
         bio = request.data.get('bio', '')
         
         try:
-            # Verificar si el usuario ya existe
             if User.objects.filter(username=username).exists():
                 return Response({
                     'error': 'El nombre de usuario ya existe'
@@ -49,7 +47,6 @@ class RegisterArtistView(generics.CreateAPIView):
                     'error': 'El email ya está registrado'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Crear usuario con rol de artista
             user = User.objects.create_user(
                 username=username,
                 email=email,
@@ -59,7 +56,6 @@ class RegisterArtistView(generics.CreateAPIView):
                 role='artist'  
             )
             
-            # Crear perfil de artista
             artist_profile = ArtistProfile.objects.create(
                 user=user,
                 bio=bio
@@ -85,6 +81,22 @@ class ProfileUpdateView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     def get_object(self):
         return self.request.user
+
+class ArtistProfileUpdateView(generics.UpdateAPIView):
+    serializer_class = ArtistProfileUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+    
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'artist':
+            return Response({'error': 'Solo los artistas pueden usar este endpoint'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            return super().update(request, *args, **kwargs)
+        except IntegrityError:
+            return Response({'error: El nombre de usuario ya existe. Por favor elige otro'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SongListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
@@ -252,6 +264,27 @@ class ProfilePictureUploadView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ProfilePictureUploadGRPCView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        import base64
+        from django.core.files.base import ContentFile
+        
+        user = request.user
+        image_data = request.data.get('image_data')
+        filename = request.data.get('filename', 'profile_image.jpg')
+        
+        image_content = base64.b64decode(image_data)
+        image_file = ContentFile(image_content, name=filename)
+        
+        serializer = ProfilePictureUploadSerializer(user, data={'profile_picture': image_file}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Imagen actualizada',
+                'image_url': request.build_absolute_uri(user.profile_picture.url)
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 from django.http import Http404
 from rest_framework import status
