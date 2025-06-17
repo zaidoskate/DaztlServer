@@ -82,6 +82,12 @@ class ProfileUpdateView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except IntegrityError:
+            return Response({'error: El nombre de usuario ya existe. Por favor elige otro'}, status=status.HTTP_400_BAD_REQUEST)
+
 class ArtistProfileUpdateView(generics.UpdateAPIView):
     serializer_class = ArtistProfileUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]

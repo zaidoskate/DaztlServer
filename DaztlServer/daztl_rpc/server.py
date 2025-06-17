@@ -126,13 +126,18 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
 
     def UpdateProfile(self, request, context):
         headers = make_auth_header(request.token)
-        payload = {
-            "email": request.email,
-            "first_name": request.first_name,
-            "last_name": request.last_name,
-            "username": request.username,
-            "password": request.password
-        }
+        payload = {}
+        
+        if request.email:
+            payload["email"] = request.email
+        if request.first_name:
+            payload["first_name"] = request.first_name
+        if request.last_name:
+            payload["last_name"] = request.last_name
+        if request.username:
+            payload["username"] = request.username
+        if request.password:
+            payload["password"] = request.password
         try:
             res = requests.put(f"{API_BASE_URL}/profile/edit", headers=headers, json=payload, timeout=60)
             if res.status_code == 200:

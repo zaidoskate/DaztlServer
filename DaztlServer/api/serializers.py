@@ -26,17 +26,22 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         return user
 class ProfileUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'password']
+        fields = ['email', 'first_name', 'last_name', 'username', 'password']
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
+        
+        username = validated_data.get('username')
+        if username and User.objects.filter(username=username).exclude(pk=instance.pk).exists():
+            raise serializers.ValidationError({'username': 'Ya existe un usuario con este nombre.'})
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
+            if value:
+                setattr(instance, attr, value)
+        if password and password.strip():
             instance.set_password(password)
         instance.save()
         return instance
