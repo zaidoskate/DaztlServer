@@ -5,7 +5,7 @@ import warnings
 
 from proto import daztl_service_pb2 as proto_dot_daztl__service__pb2
 
-GRPC_GENERATED_VERSION = '1.72.1'
+GRPC_GENERATED_VERSION = '1.73.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -118,6 +118,11 @@ class MusicServiceStub(object):
                 '/daztl.MusicService/UploadAlbum',
                 request_serializer=proto_dot_daztl__service__pb2.UploadAlbumRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
+                _registered_method=True)
+        self.GetAlbumDetail = channel.unary_unary(
+                '/daztl.MusicService/GetAlbumDetail',
+                request_serializer=proto_dot_daztl__service__pb2.AlbumDetailRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.AlbumDetailResponse.FromString,
                 _registered_method=True)
         self.ArtistReport = channel.unary_unary(
                 '/daztl.MusicService/ArtistReport',
@@ -306,6 +311,12 @@ class MusicServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def UploadAlbum(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetAlbumDetail(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -500,6 +511,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.UploadAlbum,
                     request_deserializer=proto_dot_daztl__service__pb2.UploadAlbumRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
+            ),
+            'GetAlbumDetail': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAlbumDetail,
+                    request_deserializer=proto_dot_daztl__service__pb2.AlbumDetailRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.AlbumDetailResponse.SerializeToString,
             ),
             'ArtistReport': grpc.unary_unary_rpc_method_handler(
                     servicer.ArtistReport,
@@ -1046,6 +1062,33 @@ class MusicService(object):
             '/daztl.MusicService/UploadAlbum',
             proto_dot_daztl__service__pb2.UploadAlbumRequest.SerializeToString,
             proto_dot_daztl__service__pb2.GenericResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetAlbumDetail(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetAlbumDetail',
+            proto_dot_daztl__service__pb2.AlbumDetailRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.AlbumDetailResponse.FromString,
             options,
             channel_credentials,
             insecure,

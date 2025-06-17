@@ -570,6 +570,56 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_details(f"Backend API error: {str(e)}")
             return daztl_service_pb2.PlaylistDetailResponse()
         
+    def GetAlbumDetail(self, request, context):
+        try:
+            response = requests.get(f"{API_BASE_URL}/albums/{request.album_id}/", timeout=60)
+            if response.status_code == 200:
+                data = response.json()
+                songs = [
+                    daztl_service_pb2.SongResponse(
+                        id=s["id"],
+                        title=s["title"],
+                        artist=s.get("artist_name", ""),
+                        audio_url=s.get("audio_url", ""),
+                        cover_url=s.get("cover_url", ""),
+                        release_date=s.get("release_date", "")
+                    ) for s in data.get("songs", [])
+                ]
+                return daztl_service_pb2.AlbumDetailResponse(
+                    id=data["id"],
+                    title=data["title"],
+                    artist_name=data.get("artist_name", ""),
+                    cover_url=data.get("cover_image", ""),  
+                    songs=songs,
+                    status="success",
+                    message="Álbum cargado correctamente"
+                )
+            else:
+                return daztl_service_pb2.AlbumDetailResponse(
+                    status="error",
+                    message=f"Error al obtener álbum: {response.text}"
+                )
+        except requests.exceptions.Timeout:
+            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
+            context.set_details("Backend API timeout")
+            return daztl_service_pb2.AlbumDetailResponse()
+            
+        except requests.exceptions.ConnectionError:
+            context.set_code(grpc.StatusCode.UNAVAILABLE)
+            context.set_details("Backend API unreachable")
+            return daztl_service_pb2.AlbumDetailResponse()
+            
+        except requests.exceptions.RequestException as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.AlbumDetailResponse()
+        
+        except Exception as e:
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Backend API error: {str(e)}")
+            return daztl_service_pb2.AlbumDetailResponse()
+
+        
     def ListPlaylists(self, request, context):
         try:
             token = request.token
