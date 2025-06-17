@@ -165,6 +165,17 @@ class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
 
+class AlbumDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
+    queryset = Album.objects.all()
+    serializer_class = AlbumSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request 
+        return context
+
+
 class AddSongToPlaylistView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

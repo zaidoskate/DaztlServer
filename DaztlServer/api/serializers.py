@@ -83,10 +83,10 @@ class SongSerializer(serializers.ModelSerializer):
 
 
 class AlbumSerializer(serializers.ModelSerializer):
-    artist = serializers.PrimaryKeyRelatedField(read_only=True) 
+    songs = SongSerializer(many=True, read_only=True)
     class Meta:
         model = Album
-        fields = ['id','title','artist','cover_image']
+        fields = ['id','title','songs','cover_image']
         
 
 class ArtistProfileSerializer(serializers.ModelSerializer):

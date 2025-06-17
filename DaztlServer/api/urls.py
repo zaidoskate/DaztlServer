@@ -32,6 +32,7 @@ urlpatterns = [
     path('songs/upload/', views.SongUploadView.as_view()),
     path('albums/upload/', views.AlbumUploadView.as_view()),
     path('albums/<int:pk>/add_song/', views.AddSongToAlbum.as_view()),
+    path('albums/<int:pk>/', views.AlbumDetailView.as_view(), name='album-detail'),
 
     # CU-10/11 Reportes
     path('reports/artist/', views.ArtistReportView.as_view()),
