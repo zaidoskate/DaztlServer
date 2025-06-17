@@ -5,7 +5,7 @@ import warnings
 
 from proto import daztl_service_pb2 as proto_dot_daztl__service__pb2
 
-GRPC_GENERATED_VERSION = '1.73.0'
+GRPC_GENERATED_VERSION = '1.72.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -158,6 +158,26 @@ class MusicServiceStub(object):
                 '/daztl.MusicService/GlobalSearch',
                 request_serializer=proto_dot_daztl__service__pb2.SearchRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GlobalSearchResponse.FromString,
+                _registered_method=True)
+        self.ListNotifications = channel.unary_unary(
+                '/daztl.MusicService/ListNotifications',
+                request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.NotificationListResponse.FromString,
+                _registered_method=True)
+        self.GetUnseenNotificationCount = channel.unary_unary(
+                '/daztl.MusicService/GetUnseenNotificationCount',
+                request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.UnseenCountResponse.FromString,
+                _registered_method=True)
+        self.MarkNotificationAsSeen = channel.unary_unary(
+                '/daztl.MusicService/MarkNotificationAsSeen',
+                request_serializer=proto_dot_daztl__service__pb2.MarkAsSeenRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
+                _registered_method=True)
+        self.CreateNotification = channel.unary_unary(
+                '/daztl.MusicService/CreateNotification',
+                request_serializer=proto_dot_daztl__service__pb2.Notification.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
                 _registered_method=True)
 
 
@@ -314,6 +334,30 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ListNotifications(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetUnseenNotificationCount(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def MarkNotificationAsSeen(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CreateNotification(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MusicServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -441,6 +485,26 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.GlobalSearch,
                     request_deserializer=proto_dot_daztl__service__pb2.SearchRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GlobalSearchResponse.SerializeToString,
+            ),
+            'ListNotifications': grpc.unary_unary_rpc_method_handler(
+                    servicer.ListNotifications,
+                    request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.NotificationListResponse.SerializeToString,
+            ),
+            'GetUnseenNotificationCount': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetUnseenNotificationCount,
+                    request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.UnseenCountResponse.SerializeToString,
+            ),
+            'MarkNotificationAsSeen': grpc.unary_unary_rpc_method_handler(
+                    servicer.MarkNotificationAsSeen,
+                    request_deserializer=proto_dot_daztl__service__pb2.MarkAsSeenRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
+            ),
+            'CreateNotification': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateNotification,
+                    request_deserializer=proto_dot_daztl__service__pb2.Notification.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1118,6 +1182,114 @@ class MusicService(object):
             '/daztl.MusicService/GlobalSearch',
             proto_dot_daztl__service__pb2.SearchRequest.SerializeToString,
             proto_dot_daztl__service__pb2.GlobalSearchResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ListNotifications(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/ListNotifications',
+            proto_dot_daztl__service__pb2.Empty.SerializeToString,
+            proto_dot_daztl__service__pb2.NotificationListResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetUnseenNotificationCount(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetUnseenNotificationCount',
+            proto_dot_daztl__service__pb2.Empty.SerializeToString,
+            proto_dot_daztl__service__pb2.UnseenCountResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def MarkNotificationAsSeen(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/MarkNotificationAsSeen',
+            proto_dot_daztl__service__pb2.MarkAsSeenRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.GenericResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateNotification(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/CreateNotification',
+            proto_dot_daztl__service__pb2.Notification.SerializeToString,
+            proto_dot_daztl__service__pb2.GenericResponse.FromString,
             options,
             channel_credentials,
             insecure,

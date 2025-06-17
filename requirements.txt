@@ -7,3 +7,5 @@ mssql-django
 gunicorn
 requests
 djangorestframework-simplejwt
+channels
+channels-redis

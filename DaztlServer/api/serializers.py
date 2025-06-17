@@ -53,11 +53,11 @@ class SongSerializer(serializers.ModelSerializer):
 
 
 class AlbumSerializer(serializers.ModelSerializer):
-    artist_name = serializers.CharField(source='artist.user.username', read_only=True)
-    songs = SongSerializer(many=True, read_only=True)
+    artist = serializers.PrimaryKeyRelatedField(read_only=True) 
     class Meta:
         model = Album
-        fields = ['id','title','artist','artist_name','cover_image','songs']
+        fields = ['id','title','artist','cover_image']
+        
 
 class ArtistProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -79,17 +79,6 @@ class SongUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
         fields = ['title','audio_file', 'cover_image']
-
-class AlbumUploadSerializer(serializers.ModelSerializer):
-    song_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
-    class Meta:
-        model = Album
-        fields = ['title','cover_image','song_ids']
-    def create(self, data):
-        songs = Song.objects.filter(id__in=data.pop('song_ids'))
-        album = Album.objects.create(**data, artist=self.context['request'].user.artistprofile)
-        album.songs.set(songs)
-        return album
 
 # — CU-10/11: Reportes
 class ArtistReportSerializer(serializers.Serializer):
@@ -113,9 +102,12 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = ['id', 'user', 'artist', 'created_at']
-        read_only_fields = ['id', 'user', 'created_at']
 class ProfilePictureUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['profile_picture']
 
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'message', 'seen', 'created_at']

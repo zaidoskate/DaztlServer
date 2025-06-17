@@ -27,6 +27,7 @@ urlpatterns = [
     # CU-08/09 Subir contenido
     path('songs/upload/', views.SongUploadView.as_view()),
     path('albums/upload/', views.AlbumUploadView.as_view()),
+    path('albums/<int:pk>/add_song/', views.AddSongToAlbum.as_view()),
 
     # CU-10/11 Reportes
     path('reports/artist/', views.ArtistReportView.as_view()),
@@ -44,4 +45,8 @@ urlpatterns = [
     #Implementacion de busqueda generalizada para escritorio
     path('search/', views.GlobalSearchView.as_view(), name='global-search'),
 
+    path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
+    path('notifications/create/', views.NotificationCreateView.as_view(), name='notification-create'),
+    path('notifications/<int:pk>/mark-seen/', views.NotificationMarkAsSeenView.as_view(), name='notification-mark-seen'),
+    path('notifications/unseen-count/', views.UnseenNotificationCountView.as_view(), name='unseen-notification-count'),
 ]
