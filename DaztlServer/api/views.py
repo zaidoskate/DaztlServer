@@ -251,6 +251,7 @@ class AlbumUploadView(generics.CreateAPIView):
                     title=song_title,
                     artist=artist_profile,
                     audio_file=audio_file,
+                    cover_image=album.cover_image,
                     release_date=timezone.now()
                 )
                 created_songs.append(song)

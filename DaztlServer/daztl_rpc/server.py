@@ -1434,7 +1434,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 
             user_data = auth_check.json()
             
-            # Verificar si el usuario es artista
             if 'artist_profile_id' not in user_data:
                 artist_check = requests.get(
                     f"{API_BASE_URL}/artist/profile/",
@@ -1450,11 +1449,9 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     )
                 user_data = artist_check.json()
             
-            # 1. Preparar datos
             album_title = request.title
             cover_image = request.cover_image
             
-            # 2. Validar datos
             if not album_title:
                 return daztl_service_pb2.GenericResponse(
                     status="error",
@@ -1467,17 +1464,15 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     message="Se requiere portada para el álbum"
                 )
             
-            # 3. Preparar payload para el API REST
             payload = {
                 'title': album_title,
+                'use_album_cover_for_songs' : 'true'
             }
             
-            # 4. Preparar archivos como lista de tuplas
             files = [
                 ('cover_image', ('cover.jpg', cover_image, 'image/jpeg'))
             ]
             
-            # 5. Procesar canciones 
             for i, song in enumerate(request.songs):
                 filename = song.filename if song.filename else f'song_{i}.mp3'
                 
@@ -1490,7 +1485,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     (filename, song.audio_file, 'audio/mpeg') 
                 ))
             
-            # 6. Llamar al API Django
             response = requests.post(
                 f"{API_BASE_URL}/albums/upload/",
                 headers=headers,
@@ -1499,14 +1493,12 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 timeout=120
             )
             
-            # 7. Manejar respuesta
             if response.status_code == 201:
                 return daztl_service_pb2.GenericResponse(
                     status="success",
                     message="Álbum creado exitosamente"
                 )
             else:
-                # Mejorar mensaje de error con detalles del backend
                 error_detail = f"Backend error {response.status_code}: {response.text}"
                 return daztl_service_pb2.GenericResponse(
                     status="error",
@@ -1521,7 +1513,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 message="Backend API unreachable"
             )
         except Exception as e:
-            # Registrar el error completo para diagnóstico
             import traceback
             error_details = f"Internal error: {str(e)}\n{traceback.format_exc()}"
             context.set_code(grpc.StatusCode.INTERNAL)
