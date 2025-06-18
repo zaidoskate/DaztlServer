@@ -7,16 +7,22 @@ from asgiref.sync import async_to_sync
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import FormParser
+from django.db import IntegrityError
+import os
+from rest_framework.exceptions import ValidationError
+
 from .models import (
     User, ArtistProfile, Song, Album,
     Playlist, Notification, Like, LiveChat
 )
 from .serializers import (
-    RegisterSerializer, UserSerializer, ProfileUpdateSerializer,
+    ChatMessageSerializer, RegisterSerializer, UserSerializer, ProfileUpdateSerializer, ArtistProfileUpdateSerializer,
     SongSerializer, AlbumSerializer, ArtistProfileSerializer,
     PlaylistSerializer, SongUploadSerializer,
     LiveChatSerializer, ArtistReportSerializer, SystemReportSerializer, LikeSerializer, ProfilePictureUploadSerializer, NotificationSerializer
 )
+from .consumers import connected_clients, connected_clients_chat
 
 
 class RegisterView(generics.CreateAPIView):
@@ -25,12 +31,10 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     
 
-# Agrega esta nueva vista al final de tu views.py
 class RegisterArtistView(generics.CreateAPIView):
     permission_classes = [permissions.AllowAny]
     
     def post(self, request, *args, **kwargs):
-        # Extraer datos del request
         username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
@@ -39,7 +43,6 @@ class RegisterArtistView(generics.CreateAPIView):
         bio = request.data.get('bio', '')
         
         try:
-            # Verificar si el usuario ya existe
             if User.objects.filter(username=username).exists():
                 return Response({
                     'error': 'El nombre de usuario ya existe'
@@ -50,7 +53,6 @@ class RegisterArtistView(generics.CreateAPIView):
                     'error': 'El email ya está registrado'
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Crear usuario con rol de artista
             user = User.objects.create_user(
                 username=username,
                 email=email,
@@ -60,7 +62,6 @@ class RegisterArtistView(generics.CreateAPIView):
                 role='artist'  
             )
             
-            # Crear perfil de artista
             artist_profile = ArtistProfile.objects.create(
                 user=user,
                 bio=bio
@@ -86,6 +87,28 @@ class ProfileUpdateView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     def get_object(self):
         return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        try:
+            return super().update(request, *args, **kwargs)
+        except IntegrityError:
+            return Response({'error: El nombre de usuario ya existe. Por favor elige otro'}, status=status.HTTP_400_BAD_REQUEST)
+
+class ArtistProfileUpdateView(generics.UpdateAPIView):
+    serializer_class = ArtistProfileUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+    
+    def update(self, request, *args, **kwargs):
+        if request.user.role != 'artist':
+            return Response({'error': 'Solo los artistas pueden usar este endpoint'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            return super().update(request, *args, **kwargs)
+        except IntegrityError:
+            return Response({'error: El nombre de usuario ya existe. Por favor elige otro'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class SongListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
@@ -120,11 +143,42 @@ class PlaylistCreateView(generics.CreateAPIView):
     serializer_class = PlaylistSerializer
     def perform_create(self, ser): ser.save(user=self.request.user)
 
+class PlaylistUploadCoverView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, pk):
+        try:
+            playlist = Playlist.objects.get(pk=pk, user=request.user)
+        except Playlist.DoesNotExist:
+            return Response({"error": "Playlist no encontrada o no tienes permisos."}, status=status.HTTP_404_NOT_FOUND)
+
+        file_obj = request.FILES.get('cover')
+
+        if not file_obj:
+            return Response({"error": "No se proporcionó ninguna imagen."}, status=status.HTTP_400_BAD_REQUEST)
+
+        playlist.cover = file_obj
+        playlist.save()
+
+        return Response({"message": "Cover subido exitosamente."}, status=status.HTTP_200_OK)
+
 class PlaylistDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = PlaylistSerializer
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
+
+class AlbumDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
+    queryset = Album.objects.all()
+    serializer_class = AlbumSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request 
+        return context
+
 
 class AddSongToPlaylistView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -147,21 +201,70 @@ class PlaylistListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Playlist.objects.filter(user=self.request.user)
-    
-
 class SongUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = SongUploadSerializer
-    def perform_create(self, ser):
+    def perform_create(self, serializer):
         artist_profile = self.request.user.artistprofile
-        ser.save(artist=artist_profile)
+        serializer.save(artist=artist_profile)
+
 
 class AlbumUploadView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    serializer_class = AlbumSerializer
-    def perform_create(self, ser):
-        artist_profile = self.request.user.artistprofile
-        ser.save(artist=artist_profile)
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def create(self, request, *args, **kwargs):
+        if request.user.role != 'artist':
+            return Response(
+                {'error': 'Solo artistas pueden subir álbumes'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        
+        title = request.data.get('title')
+        cover_image = request.FILES.get('cover_image')
+        songs = request.FILES.getlist('songs')  
+        
+        if not title:
+            raise ValidationError({'title': 'Este campo es requerido'})
+        if not cover_image:
+            raise ValidationError({'cover_image': 'Se requiere portada para el álbum'})
+        if not songs:
+            raise ValidationError({'songs': 'Debe incluir al menos una canción'})
+        
+        try:
+            artist_profile = request.user.artistprofile
+            album = Album.objects.create(
+                title=title,
+                artist=artist_profile,
+                cover_image=cover_image
+            )
+            
+            created_songs = []
+            for i, audio_file in enumerate(songs):
+                song_title = request.POST.get(f'song_{i}_title', '')
+                
+                if not song_title:
+                    song_title = os.path.splitext(audio_file.name)[0]  
+                
+                song = Song.objects.create(
+                    title=song_title,
+                    artist=artist_profile,
+                    audio_file=audio_file,
+                    release_date=timezone.now()
+                )
+                created_songs.append(song)
+            
+            album.songs.set(created_songs)
+            
+            serializer = AlbumSerializer(album)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class AddSongToAlbum(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -237,6 +340,33 @@ class ProfileView(APIView):
             "last_name": user.last_name,
             "profile_image_url": profile_picture_url,
         })
+        
+class ArtistProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        if user.role != 'artist':
+            return Response({
+                'error': 'Solo los artistas pueden acceder a este endpoint'
+            }, status=status.HTTP_403_FORBIDDEN)
+            
+        artist_profile = user.artistprofile
+        profile_picture_url = ""
+        if user.profile_picture:
+            profile_picture_url = request.build_absolute_uri(user.profile_picture.url)
+        
+        return Response({
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "profile_image_url": profile_picture_url,
+            "bio": artist_profile.bio,
+            "artist_profile_id": artist_profile.id
+            
+        })
 class ProfilePictureUploadView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser]
@@ -252,6 +382,162 @@ class ProfilePictureUploadView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class ProfilePictureUploadGRPCView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request, *args, **kwargs):
+        import base64
+        from django.core.files.base import ContentFile
+        
+        user = request.user
+        image_data = request.data.get('image_data')
+        filename = request.data.get('filename', 'profile_image.jpg')
+        
+        image_content = base64.b64decode(image_data)
+        image_file = ContentFile(image_content, name=filename)
+        
+        serializer = ProfilePictureUploadSerializer(user, data={'profile_picture': image_file}, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'message': 'Imagen actualizada',
+                'image_url': request.build_absolute_uri(user.profile_picture.url)
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AdminReportsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, report_type):
+        if request.user.role != 'admin':
+            return Response({
+                'error': 'Solo los administradores pueden acceder a los reportes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            if report_type == 'users':
+                return self.get_users_report()
+            elif report_type == 'artists':
+                return self.get_artists_report()
+            elif report_type == 'listeners':
+                return self.get_listeners_report()
+            elif report_type == 'songs':
+                return self.get_songs_report()
+            elif report_type == 'albums':
+                return self.get_albums_report()
+            else:
+                return Response({
+                    'error': 'Tipo de reporte no válido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def get_users_report(self):
+        users = User.objects.all().values(
+            'id', 'username', 'email', 'first_name', 'last_name', 
+            'role', 'date_joined', 
+        )
+        return Response({
+            'report_type': 'users',
+            'total_count': users.count(),
+            'data': list(users)
+        })
+    
+    def get_artists_report(self):
+        artists = User.objects.filter(role='artist').values(
+            'id', 'username', 'email', 
+            'first_name', 'last_name', 'date_joined', 
+        )
+        return Response({
+            'report_type': 'artists',
+            'total_count': artists.count(),
+            'data': list(artists)
+        })
+    
+    def get_listeners_report(self):
+        listeners = User.objects.filter(role='listener').values(
+            'id', 'username', 'email', 
+            'first_name', 'last_name', 'date_joined',
+        )
+        return Response({
+            'report_type': 'listeners',
+            'total_count': listeners.count(),
+            'data': list(listeners)
+        })
+    
+    def get_songs_report(self):
+        songs = Song.objects.all().values('id', 'title', 'release_date')
+        return Response({
+            'report_type': 'songs',
+            'total_count': songs.count(),
+            'data': list(songs)
+        })
+    
+    def get_albums_report(self):
+        albums = Album.objects.all().values('id', 'title')
+        return Response({
+            'report_type': 'albums',
+            'total_count': albums.count(),
+            'data': list(albums)
+        })
+        
+class ArtistReportsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request, report_type):
+        user = request.user
+        
+        if user.role != 'artist':
+            return Response({
+                'error': 'Solo los artistas pueden acceder a estos reportes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        if not hasattr(user, 'artistprofile'):
+            return Response({
+                'error': 'Perfil de artista no encontrado'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            artist_profile = user.artistprofile
+            
+            if report_type == 'songs':
+                return self.get_artist_songs_report(artist_profile)
+            elif report_type == 'albums':
+                return self.get_artist_albums_report(artist_profile)
+            else:
+                return Response({
+                    'error': 'Tipo de reporte no válido'
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def get_artist_songs_report(self, artist_profile):
+        songs = Song.objects.filter(artist=artist_profile).values(
+            'id', 'title', 'release_date'
+        )
+        
+        return Response({
+            'report_type': 'artist_songs',
+            'total_count': songs.count(),
+            'data': list(songs)
+        })
+    
+    def get_artist_albums_report(self, artist_profile):
+        albums = Album.objects.filter(artist=artist_profile).values(
+            'id', 'title'
+        )
+        
+        return Response({
+            'report_type': 'artist_albums',
+            'total_count': albums.count(),
+            'data': list(albums)
+        })
+
 
 from django.http import Http404
 from rest_framework import status
@@ -260,25 +546,23 @@ from rest_framework.decorators import api_view
 from .models import Like, ArtistProfile
 
 # --- CU-13: Like/Unlike artista ---
-@api_view(['POST'])
+@api_view(['POST', 'DELETE'])
 def like_artist(request, artist_id):
     try:
         artist = ArtistProfile.objects.get(id=artist_id)
     except ArtistProfile.DoesNotExist:
         return Response({"error": "Artista no encontrado"}, status=status.HTTP_404_NOT_FOUND)
     
-    Like.objects.get_or_create(user=request.user, artist=artist)
-    return Response({"status": "Like agregado"}, status=status.HTTP_201_CREATED)
-
-@api_view(['DELETE'])
-def unlike_artist(request, artist_id):
-    try:
-        like = Like.objects.get(user=request.user, artist_id=artist_id)
-    except Like.DoesNotExist:
-        return Response({"error": "Like no encontrado"}, status=status.HTTP_404_NOT_FOUND)
-    
-    like.delete()
-    return Response({"status": "Like eliminado"}, status=status.HTTP_200_OK)
+    if request.method == 'POST':
+        Like.objects.get_or_create(user=request.user, artist=artist)
+        return Response({"status": "Like agregado"}, status=status.HTTP_201_CREATED)
+    elif request.method == 'DELETE':
+        try:
+            like = Like.objects.get(user=request.user, artist=artist)
+            like.delete()
+            return Response({"status": "Like eliminado"}, status=status.HTTP_200_OK)
+        except Like.DoesNotExist:
+            return Response({"error": "Like no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['GET'])
 def is_liked(request, artist_id):
@@ -354,20 +638,34 @@ class NotificationCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         notification = serializer.save(user=self.request.user)
+        payload = {
+            "id" : notification.id,
+            "type": "notification",
+            "message": notification.message,
+            "created_at": notification.created_at.isoformat() 
+        }
         if notification.is_broadcast:
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "broadcast_group",
-                {
-                    "type": "send.notification",
-                    "content": {
-                        "type": "notification",
-                        "id": str(notification.id),
-                        "message": notification.message
-                    }
-                }
-            )
+            for client in list(connected_clients):
+                async_to_sync(client.send_personal)(payload)
 
+class ChatSendView(generics.CreateAPIView):
+    serializer_class = ChatMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        message_data = serializer.validated_data
+        
+        payload = {
+            "type": "chat_message",
+            "username": self.request.user.username,
+            "message": message_data['message']
+        }
+        
+        for client in list(connected_clients_chat):
+            async_to_sync(client.send_personal)(payload)
+        
+        return None
+    
 class NotificationMarkAsSeenView(generics.UpdateAPIView):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer

@@ -1,1 +1,3 @@
 DaztlServer/media/
+DaztlServer/api/__pycache__/
+DaztlServer/daztl_rpc/proto/__pycache__

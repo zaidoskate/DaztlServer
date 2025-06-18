@@ -26,44 +26,81 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
         return user
 class ProfileUpdateSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'password']
+        fields = ['email', 'first_name', 'last_name', 'username', 'password']
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
+        
+        username = validated_data.get('username')
+        if username and User.objects.filter(username=username).exclude(pk=instance.pk).exists():
+            raise serializers.ValidationError({'username': 'Ya existe un usuario con este nombre.'})
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
+            if value:
+                setattr(instance, attr, value)
+        if password and password.strip():
             instance.set_password(password)
         instance.save()
+        return instance
+
+class ArtistProfileUpdateSerializer(serializers.ModelSerializer):
+    bio = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    username = serializers.CharField(required=False, allow_blank=False)
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'bio']
+    
+    def update(self, instance, validated_data):
+        bio = validated_data.pop('bio', None)
+        
+        for attr, value in validated_data.items():
+            if attr == 'password' and value:
+                if value and value.strip():
+                    instance.set_password(value)
+            elif attr != 'password':
+                setattr(instance, attr, value)
+        instance.save()
+        
+        if bio is not None and hasattr(instance, 'artistprofile'):
+            instance.artistprofile.bio = bio
+            instance.artistprofile.save()
+        
         return instance
 
 
 # — CU-03: Buscar contenido
 class SongSerializer(serializers.ModelSerializer):
     artist_name = serializers.CharField(source='artist.user.username', read_only=True)
-    audio_url = serializers.ImageField(source='audio_file', read_only=True)
-    cover_url = serializers.ImageField(source='cover_image', read_only=True)
+    audio_url = serializers.FileField(source='audio_file', read_only=True)
+    cover_url = serializers.SerializerMethodField()
+    
+    def get_cover_url(self, obj):
+        if obj.cover_image:
+            return obj.cover_image.url
+        if hasattr(obj, 'album') and obj.album.cover_image:
+            return obj.album.cover_image.url
+        return None
     class Meta:
         model = Song
         fields = ['id','title','artist_name','audio_url','cover_url','release_date']
 
 
 class AlbumSerializer(serializers.ModelSerializer):
-    artist = serializers.PrimaryKeyRelatedField(read_only=True) 
+    songs = SongSerializer(many=True, read_only=True)
     class Meta:
         model = Album
-        fields = ['id','title','artist','cover_image']
+        fields = ['id','title','songs','cover_image']
         
 
 class ArtistProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     class Meta:
         model = ArtistProfile
-        fields = ['id','user','bio','profile_picture']
+        fields = ['id','user','bio']
 
 # — CU-05/06/07: Playlists
 class PlaylistSerializer(serializers.ModelSerializer):
@@ -78,7 +115,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
 class SongUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ['title','audio_file', 'cover_image']
+        fields = ['title','audio_file', 'cover_image', 'release_date', 'artist_id']
 
 # — CU-10/11: Reportes
 class ArtistReportSerializer(serializers.Serializer):
@@ -110,4 +147,10 @@ class ProfilePictureUploadSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
-        fields = ['id', 'user', 'message', 'seen', 'created_at']
+        fields = ['id', 'user', 'message', 'is_broadcast', 'seen', 'created_at']
+
+class ChatMessageSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=500)
+    
+    def create(self, validated_data):
+        return validated_data

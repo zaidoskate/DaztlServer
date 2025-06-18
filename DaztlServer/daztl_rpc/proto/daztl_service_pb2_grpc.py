@@ -44,6 +44,11 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.UpdateProfileRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
                 _registered_method=True)
+        self.UpdateArtistProfile = channel.unary_unary(
+                '/daztl.MusicService/UpdateArtistProfile',
+                request_serializer=proto_dot_daztl__service__pb2.UpdateArtistProfileRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
+                _registered_method=True)
         self.LoginUser = channel.unary_unary(
                 '/daztl.MusicService/LoginUser',
                 request_serializer=proto_dot_daztl__service__pb2.LoginRequest.SerializeToString,
@@ -53,6 +58,11 @@ class MusicServiceStub(object):
                 '/daztl.MusicService/RegisterArtist',
                 request_serializer=proto_dot_daztl__service__pb2.RegisterArtistRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
+                _registered_method=True)
+        self.UploadProfileImage = channel.unary_unary(
+                '/daztl.MusicService/UploadProfileImage',
+                request_serializer=proto_dot_daztl__service__pb2.UploadProfileImageRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.UploadProfileImageResponse.FromString,
                 _registered_method=True)
         self.ListSongs = channel.unary_unary(
                 '/daztl.MusicService/ListSongs',
@@ -109,6 +119,11 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.UploadAlbumRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GenericResponse.FromString,
                 _registered_method=True)
+        self.GetAlbumDetail = channel.unary_unary(
+                '/daztl.MusicService/GetAlbumDetail',
+                request_serializer=proto_dot_daztl__service__pb2.AlbumDetailRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.AlbumDetailResponse.FromString,
+                _registered_method=True)
         self.ArtistReport = channel.unary_unary(
                 '/daztl.MusicService/ArtistReport',
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
@@ -118,6 +133,16 @@ class MusicServiceStub(object):
                 '/daztl.MusicService/SystemReport',
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.ReportResponse.FromString,
+                _registered_method=True)
+        self.GetAdminReport = channel.unary_unary(
+                '/daztl.MusicService/GetAdminReport',
+                request_serializer=proto_dot_daztl__service__pb2.AdminReportRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.AdminReportResponse.FromString,
+                _registered_method=True)
+        self.GetArtistReport = channel.unary_unary(
+                '/daztl.MusicService/GetArtistReport',
+                request_serializer=proto_dot_daztl__service__pb2.ArtistReportRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.ArtistReportResponse.FromString,
                 _registered_method=True)
         self.ListChatMessages = channel.unary_unary(
                 '/daztl.MusicService/ListChatMessages',
@@ -149,6 +174,11 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.UserProfileResponse.FromString,
                 _registered_method=True)
+        self.GetArtistProfile = channel.unary_unary(
+                '/daztl.MusicService/GetArtistProfile',
+                request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.ArtistProfileResponse.FromString,
+                _registered_method=True)
         self.RefreshToken = channel.unary_unary(
                 '/daztl.MusicService/RefreshToken',
                 request_serializer=proto_dot_daztl__service__pb2.RefreshTokenRequest.SerializeToString,
@@ -158,6 +188,11 @@ class MusicServiceStub(object):
                 '/daztl.MusicService/GlobalSearch',
                 request_serializer=proto_dot_daztl__service__pb2.SearchRequest.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.GlobalSearchResponse.FromString,
+                _registered_method=True)
+        self.SendMessageChat = channel.unary_unary(
+                '/daztl.MusicService/SendMessageChat',
+                request_serializer=proto_dot_daztl__service__pb2.MessageRequest.SerializeToString,
+                response_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
                 _registered_method=True)
         self.ListNotifications = channel.unary_unary(
                 '/daztl.MusicService/ListNotifications',
@@ -196,6 +231,12 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def UpdateArtistProfile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def LoginUser(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -203,6 +244,12 @@ class MusicServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def RegisterArtist(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UploadProfileImage(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -274,6 +321,12 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetAlbumDetail(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ArtistReport(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -281,6 +334,18 @@ class MusicServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def SystemReport(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetAdminReport(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetArtistReport(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -322,6 +387,12 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetArtistProfile(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def RefreshToken(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -329,6 +400,12 @@ class MusicServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GlobalSearch(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SendMessageChat(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -371,6 +448,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_daztl__service__pb2.UpdateProfileRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
             ),
+            'UpdateArtistProfile': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateArtistProfile,
+                    request_deserializer=proto_dot_daztl__service__pb2.UpdateArtistProfileRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
+            ),
             'LoginUser': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginUser,
                     request_deserializer=proto_dot_daztl__service__pb2.LoginRequest.FromString,
@@ -380,6 +462,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.RegisterArtist,
                     request_deserializer=proto_dot_daztl__service__pb2.RegisterArtistRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
+            ),
+            'UploadProfileImage': grpc.unary_unary_rpc_method_handler(
+                    servicer.UploadProfileImage,
+                    request_deserializer=proto_dot_daztl__service__pb2.UploadProfileImageRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.UploadProfileImageResponse.SerializeToString,
             ),
             'ListSongs': grpc.unary_unary_rpc_method_handler(
                     servicer.ListSongs,
@@ -436,6 +523,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_daztl__service__pb2.UploadAlbumRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GenericResponse.SerializeToString,
             ),
+            'GetAlbumDetail': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAlbumDetail,
+                    request_deserializer=proto_dot_daztl__service__pb2.AlbumDetailRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.AlbumDetailResponse.SerializeToString,
+            ),
             'ArtistReport': grpc.unary_unary_rpc_method_handler(
                     servicer.ArtistReport,
                     request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
@@ -445,6 +537,16 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.SystemReport,
                     request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.ReportResponse.SerializeToString,
+            ),
+            'GetAdminReport': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetAdminReport,
+                    request_deserializer=proto_dot_daztl__service__pb2.AdminReportRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.AdminReportResponse.SerializeToString,
+            ),
+            'GetArtistReport': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetArtistReport,
+                    request_deserializer=proto_dot_daztl__service__pb2.ArtistReportRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.ArtistReportResponse.SerializeToString,
             ),
             'ListChatMessages': grpc.unary_unary_rpc_method_handler(
                     servicer.ListChatMessages,
@@ -476,6 +578,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.UserProfileResponse.SerializeToString,
             ),
+            'GetArtistProfile': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetArtistProfile,
+                    request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.ArtistProfileResponse.SerializeToString,
+            ),
             'RefreshToken': grpc.unary_unary_rpc_method_handler(
                     servicer.RefreshToken,
                     request_deserializer=proto_dot_daztl__service__pb2.RefreshTokenRequest.FromString,
@@ -485,6 +592,11 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.GlobalSearch,
                     request_deserializer=proto_dot_daztl__service__pb2.SearchRequest.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.GlobalSearchResponse.SerializeToString,
+            ),
+            'SendMessageChat': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendMessageChat,
+                    request_deserializer=proto_dot_daztl__service__pb2.MessageRequest.FromString,
+                    response_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
             ),
             'ListNotifications': grpc.unary_unary_rpc_method_handler(
                     servicer.ListNotifications,
@@ -572,6 +684,33 @@ class MusicService(object):
             _registered_method=True)
 
     @staticmethod
+    def UpdateArtistProfile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/UpdateArtistProfile',
+            proto_dot_daztl__service__pb2.UpdateArtistProfileRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.GenericResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def LoginUser(request,
             target,
             options=(),
@@ -615,6 +754,33 @@ class MusicService(object):
             '/daztl.MusicService/RegisterArtist',
             proto_dot_daztl__service__pb2.RegisterArtistRequest.SerializeToString,
             proto_dot_daztl__service__pb2.GenericResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UploadProfileImage(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/UploadProfileImage',
+            proto_dot_daztl__service__pb2.UploadProfileImageRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.UploadProfileImageResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -923,6 +1089,33 @@ class MusicService(object):
             _registered_method=True)
 
     @staticmethod
+    def GetAlbumDetail(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetAlbumDetail',
+            proto_dot_daztl__service__pb2.AlbumDetailRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.AlbumDetailResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def ArtistReport(request,
             target,
             options=(),
@@ -966,6 +1159,60 @@ class MusicService(object):
             '/daztl.MusicService/SystemReport',
             proto_dot_daztl__service__pb2.Empty.SerializeToString,
             proto_dot_daztl__service__pb2.ReportResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetAdminReport(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetAdminReport',
+            proto_dot_daztl__service__pb2.AdminReportRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.AdminReportResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetArtistReport(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetArtistReport',
+            proto_dot_daztl__service__pb2.ArtistReportRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.ArtistReportResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1139,6 +1386,33 @@ class MusicService(object):
             _registered_method=True)
 
     @staticmethod
+    def GetArtistProfile(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/GetArtistProfile',
+            proto_dot_daztl__service__pb2.Empty.SerializeToString,
+            proto_dot_daztl__service__pb2.ArtistProfileResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def RefreshToken(request,
             target,
             options=(),
@@ -1182,6 +1456,33 @@ class MusicService(object):
             '/daztl.MusicService/GlobalSearch',
             proto_dot_daztl__service__pb2.SearchRequest.SerializeToString,
             proto_dot_daztl__service__pb2.GlobalSearchResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendMessageChat(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/daztl.MusicService/SendMessageChat',
+            proto_dot_daztl__service__pb2.MessageRequest.SerializeToString,
+            proto_dot_daztl__service__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
