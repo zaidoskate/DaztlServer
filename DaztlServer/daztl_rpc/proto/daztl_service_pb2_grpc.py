@@ -199,11 +199,6 @@ class MusicServiceStub(object):
                 request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
                 response_deserializer=proto_dot_daztl__service__pb2.NotificationListResponse.FromString,
                 _registered_method=True)
-        self.GetUnseenNotificationCount = channel.unary_unary(
-                '/daztl.MusicService/GetUnseenNotificationCount',
-                request_serializer=proto_dot_daztl__service__pb2.Empty.SerializeToString,
-                response_deserializer=proto_dot_daztl__service__pb2.UnseenCountResponse.FromString,
-                _registered_method=True)
         self.MarkNotificationAsSeen = channel.unary_unary(
                 '/daztl.MusicService/MarkNotificationAsSeen',
                 request_serializer=proto_dot_daztl__service__pb2.MarkAsSeenRequest.SerializeToString,
@@ -417,12 +412,6 @@ class MusicServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def GetUnseenNotificationCount(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def MarkNotificationAsSeen(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -602,11 +591,6 @@ def add_MusicServiceServicer_to_server(servicer, server):
                     servicer.ListNotifications,
                     request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
                     response_serializer=proto_dot_daztl__service__pb2.NotificationListResponse.SerializeToString,
-            ),
-            'GetUnseenNotificationCount': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetUnseenNotificationCount,
-                    request_deserializer=proto_dot_daztl__service__pb2.Empty.FromString,
-                    response_serializer=proto_dot_daztl__service__pb2.UnseenCountResponse.SerializeToString,
             ),
             'MarkNotificationAsSeen': grpc.unary_unary_rpc_method_handler(
                     servicer.MarkNotificationAsSeen,
@@ -1510,33 +1494,6 @@ class MusicService(object):
             '/daztl.MusicService/ListNotifications',
             proto_dot_daztl__service__pb2.Empty.SerializeToString,
             proto_dot_daztl__service__pb2.NotificationListResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def GetUnseenNotificationCount(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/daztl.MusicService/GetUnseenNotificationCount',
-            proto_dot_daztl__service__pb2.Empty.SerializeToString,
-            proto_dot_daztl__service__pb2.UnseenCountResponse.FromString,
             options,
             channel_credentials,
             insecure,

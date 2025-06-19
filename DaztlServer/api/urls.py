@@ -43,6 +43,7 @@ urlpatterns = [
     # CU-12 Chat en vivo
     path('songs/<int:song_id>/chat/', views.LiveChatListView.as_view()),
     path('songs/<int:song_id>/chat/send/', views.LiveChatCreateView.as_view()),
+    path('chat/send/', views.ChatSendView.as_view()),
 
     #CU-13 Like/unlike artista
     path('artists/<int:artist_id>/like/', views.like_artist, name='like-artist'), #POST
@@ -55,6 +56,5 @@ urlpatterns = [
     path('notifications/', views.NotificationListView.as_view(), name='notification-list'),
     path('notifications/create/', views.NotificationCreateView.as_view(), name='notification-create'),
     path('notifications/<int:pk>/mark-seen/', views.NotificationMarkAsSeenView.as_view(), name='notification-mark-seen'),
-    path('notifications/unseen-count/', views.UnseenNotificationCountView.as_view(), name='unseen-notification-count'),
     path('songs/<int:song_id>/chat/send/', views.LiveChatCreateView.as_view())
 ]

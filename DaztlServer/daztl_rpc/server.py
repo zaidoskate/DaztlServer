@@ -1075,25 +1075,19 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
 
 
     def ListNotifications(self, request, context):
-        token = self.get_token_from_metadata(context)
-        if not token:
-            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization token")
         
         try:
-            headers = make_auth_header(token)
-            response = requests.get(f"{API_BASE_URL}/notifications/", headers=headers, timeout=60)
-            
+            response = requests.get(f"{API_BASE_URL}/notifications/", timeout=30)
             if response.status_code == 200:
                 notifications_data = response.json()
                 notifications = []
                 
                 for notification in notifications_data:
                     notifications.append(daztl_service_pb2.Notification(
-                        id=notification.get("id"),
-                        message=notification.get("message"),
-                        notification_type=notification.get("notification_type"),
-                        seen=notification.get("seen"),
-                        created_at=notification.get("created_at")
+                        id=str(notification['id']),
+                        message=str(notification['message']),
+                        user=str(notification['user']),
+                        created_at=str(notification['created_at'])
                     ))
                 
                 return daztl_service_pb2.NotificationListResponse(notifications=notifications)
@@ -1120,48 +1114,13 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_details(f"Unexpected error: {str(e)}")
             return daztl_service_pb2.NotificationListResponse()
 
-    def GetUnseenNotificationCount(self, request, context):
-        token = self.get_token_from_metadata(context)
-        if not token:
-            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization token")
-        
-        try:
-            headers = make_auth_header(token)
-            response = requests.get(f"{API_BASE_URL}/notifications/unseen-count/", headers=headers, timeout=60)
-            
-            if response.status_code == 200:
-                data = response.json()
-                return daztl_service_pb2.UnseenCountResponse(count=data.get("unseen_count", 0))
-            else:
-                context.abort(grpc.StatusCode.INTERNAL, f"Failed to get unseen count: {response.text}")
-        
-        except requests.exceptions.Timeout:
-            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
-            context.set_details("Backend API timeout")
-            return daztl_service_pb2.UnseenCountResponse()
-            
-        except requests.exceptions.ConnectionError:
-            context.set_code(grpc.StatusCode.UNAVAILABLE)
-            context.set_details("Backend API unreachable")
-            return daztl_service_pb2.UnseenCountResponse()
-            
-        except requests.exceptions.RequestException as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Backend API error: {str(e)}")
-            return daztl_service_pb2.UnseenCountResponse()
-        
-        except Exception as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Unexpected error: {str(e)}")
-            return daztl_service_pb2.UnseenCountResponse()
-
     def MarkNotificationAsSeen(self, request, context):
         try:
             headers = make_auth_header(request.token)
             response = requests.patch(
                 f"{API_BASE_URL}/notifications/{request.notification_id}/mark-seen/",
                 headers=headers,
-                timeout=60
+                timeout=30
             )
             
             if response.status_code == 200:
@@ -1194,49 +1153,9 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Unexpected error: {str(e)}")
             return daztl_service_pb2.GenericResponse()
-    def CreateNotification(self, request, context):
-        token = self.get_token_from_metadata(context)
-        if not token:
-            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization token")
-        
-        try:
-            headers = make_auth_header(token)
-            payload = {
-                "message": request.message
-            }
-            
-            response = requests.post(
-                f"{API_BASE_URL}/notifications/create/",
-                headers=headers,
-                json=payload,
-                timeout=60
-            )
-            
-            if response.status_code == 201:
-                return daztl_service_pb2.GenericResponse(
-                    status="success",
-                    message="Notification created successfully"
-                )
-            else:
-                return daztl_service_pb2.GenericResponse(
-                    status="error",
-                    message=response.text
-                )
-        
-        except requests.exceptions.Timeout:
-            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
-            context.set_details("Backend API timeout")
-            return daztl_service_pb2.GenericResponse()
-        
-        except Exception as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Unexpected error: {str(e)}")
-            return daztl_service_pb2.GenericResponse()
     
-    # Reemplazo para el método UploadSong en server.py
     def UploadSong(self, request, context):
         try:
-            # 1. Verificar autenticación
             headers = make_auth_header(request.token)
             auth_check = requests.get(
                 f"{API_BASE_URL}/profile/",
@@ -1254,7 +1173,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                 
             user_data = auth_check.json()
             
-            # 2. Verificar que es artista
             if not hasattr(user_data, 'artist_profile_id') and 'artist_profile_id' not in user_data:
                 artist_check = requests.get(
                     f"{API_BASE_URL}/artist/profile/",
@@ -1270,19 +1188,16 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     )
                 user_data = artist_check.json()
             
-            # 3. Preparar archivos usando el mismo enfoque que perfil
             files = {}
             data = {
                 'title': request.title,
             }
             
-            # Agregar fecha de lanzamiento si existe
             if request.release_date:
                 data['release_date'] = request.release_date
             else:
                 data['release_date'] = datetime.now().date().isoformat()
             
-            # Archivo de audio (obligatorio)
             if request.audio_file:
                 files['audio_file'] = (
                     f'audio_{int(time.time())}.mp3',
@@ -1295,7 +1210,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     message="Audio file is required"
                 )
             
-            # Imagen de portada (opcional)
             if request.cover_image:
                 files['cover_image'] = (
                     f'cover_{int(time.time())}.jpg',
@@ -1303,7 +1217,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
                     'image/jpeg'
                 )
             
-            # 4. Enviar al API Django
             response = requests.post(
                 f"{API_BASE_URL}/songs/upload/",
                 headers=headers,
@@ -1314,22 +1227,6 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             
             if response.status_code == 201:
                 song_data = response.json()
-                
-                # 5. Crear notificación
-                try:
-                    notification_payload = {
-                        'message': f"Nueva canción subida: {request.title}",
-                        'notification_type': 'new_song',
-                        'seen': False
-                    }
-                    requests.post(
-                        f"{API_BASE_URL}/notifications/create/",
-                        headers=headers,
-                        json=notification_payload,
-                        timeout=10
-                    )
-                except:
-                    pass  
                 
                 return daztl_service_pb2.GenericResponse(
                     status="success",
@@ -1375,11 +1272,10 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
             
             payload = {
                 "message": request.message,
-                "username": request.username  # El username viene en la request gRPC
             }
             
             response = requests.post(
-                f"{API_BASE_URL}/chat/send/",  # Asumiendo que esta es la URL de tu vista
+                f"{API_BASE_URL}/chat/send/",
                 headers=headers,
                 json=payload,
                 timeout=60
@@ -1533,52 +1429,7 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
 
 
             
-    def ListNotifications(self, request, context):
-        token = self.get_token_from_metadata(context)
-        if not token:
-            context.abort(grpc.StatusCode.UNAUTHENTICATED, "Missing authorization token")
-        
-        try:
-            headers = make_auth_header(token)
-            response = requests.get(f"{API_BASE_URL}/notifications/", headers=headers, timeout=60)
-            
-            if response.status_code == 200:
-                notifications_data = response.json()
-                notifications = []
-                
-                for notification in notifications_data:
-                    notifications.append(daztl_service_pb2.Notification(
-                        id=notification.get("id"),
-                        message=notification.get("message"),
-                        notification_type=notification.get("notification_type"),
-                        seen=notification.get("seen"),
-                        created_at=notification.get("created_at")
-                    ))
-                
-                return daztl_service_pb2.NotificationListResponse(notifications=notifications)
-            else:
-                context.abort(grpc.StatusCode.INTERNAL, f"Failed to fetch notifications: {response.text}")
-        
-        except requests.exceptions.Timeout:
-            context.set_code(grpc.StatusCode.DEADLINE_EXCEEDED)
-            context.set_details("Backend API timeout")
-            return daztl_service_pb2.NotificationListResponse()
-            
-        except requests.exceptions.ConnectionError:
-            context.set_code(grpc.StatusCode.UNAVAILABLE)
-            context.set_details("Backend API unreachable")
-            return daztl_service_pb2.NotificationListResponse()
-            
-        except requests.exceptions.RequestException as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Backend API error: {str(e)}")
-            return daztl_service_pb2.NotificationListResponse()
-        
-        except Exception as e:
-            context.set_code(grpc.StatusCode.INTERNAL)
-            context.set_details(f"Unexpected error: {str(e)}")
-            return daztl_service_pb2.NotificationListResponse()
-
+    
     def GetUnseenNotificationCount(self, request, context):
         token = self.get_token_from_metadata(context)
         if not token:
@@ -1662,7 +1513,9 @@ class MusicServiceServicer(daztl_service_pb2_grpc.MusicServiceServicer):
         try:
             headers = make_auth_header(token)
             payload = {
-                "message": request.message
+                "message": request.message,
+                "user": 1,
+                "is_brodcast": True
             }
             
             response = requests.post(

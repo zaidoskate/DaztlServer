@@ -1,4 +1,5 @@
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -625,11 +626,20 @@ class GlobalSearchView(APIView):
     
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        # Solo mostrar notificaciones del usuario actual
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+        one_hour_ago = timezone.now() - timedelta(hours=1)
+        
+        queryset = Notification.objects.filter(
+            seen=False,
+            created_at__gte=one_hour_ago
+        ).order_by('-created_at')
+        
+        return queryset
+    
+
+    
 
 class NotificationCreateView(generics.CreateAPIView):
     queryset = Notification.objects.all()
@@ -644,9 +654,8 @@ class NotificationCreateView(generics.CreateAPIView):
             "message": notification.message,
             "created_at": notification.created_at.isoformat() 
         }
-        if notification.is_broadcast:
-            for client in list(connected_clients):
-                async_to_sync(client.send_personal)(payload)
+        for client in list(connected_clients):
+            async_to_sync(client.send_personal)(payload)
 
 class ChatSendView(generics.CreateAPIView):
     serializer_class = ChatMessageSerializer
@@ -672,19 +681,9 @@ class NotificationMarkAsSeenView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     http_method_names = ['patch']  # Solo permitir PATCH
 
-    def get_queryset(self):
-        # Solo permitir actualizar notificaciones del usuario actual
-        return Notification.objects.filter(user=self.request.user)
-
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.seen = True
         instance.save()
-        return Response(self.get_serializer(instance).data)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-class UnseenNotificationCountView(generics.GenericAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        count = Notification.objects.filter(user=request.user, seen=False).count()
-        return Response({'unseen_count': count})
