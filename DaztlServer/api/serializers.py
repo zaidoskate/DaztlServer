@@ -79,10 +79,20 @@ class SongSerializer(serializers.ModelSerializer):
     cover_url = serializers.SerializerMethodField()
     
     def get_cover_url(self, obj):
+        request = self.context.get('request')
+        
         if obj.cover_image:
-            return obj.cover_image.url
-        if hasattr(obj, 'album') and obj.album.cover_image:
-            return obj.album.cover_image.url
+            if request:
+                return request.build_absolute_uri(obj.cover_image.url) 
+            return obj.cover_image.url  
+        
+        # Buscar en álbumes que contengan esta canción
+        album_with_song = Album.objects.filter(songs=obj).first()
+        if album_with_song and album_with_song.cover_image:
+            if request:
+                return request.build_absolute_uri(album_with_song.cover_image.url) 
+            return album_with_song.cover_image.url  
+            
         return None
     class Meta:
         model = Song
